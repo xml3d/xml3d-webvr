@@ -1,0 +1,33 @@
+{
+  "name": "xml3d-webvr",
+  "version": "0.0.1",
+  "description": "Plugin to support WebVR in XML3D scenes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xml3d/xml3d-webvr"
+  },
+  "keywords": [
+    "XML3D",
+    "WebVR",
+    "WebGL"
+  ],
+  "author": "Alex Grethen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xml3d/xml3d-webvr/issues"
+  },
+  "homepage": "https://github.com/xml3d/xml3d-webvr",
+  "dependencies": {
+
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^4.0.1",
+    "grunt-contrib-concat": "^0.5.1",
+    "uglifyify": "^3.0.1"
+  }
+}
