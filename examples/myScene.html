@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" type="text/css" media="all" href="style/normalize.css">
+    <link rel="stylesheet" type="text/css" media="all" href="style/foundation.css">
+    <link rel="stylesheet" type="text/css" media="all" href="style/page.css">
+
+    <script type="text/javascript" src="script/vendor/modernizr.js"></script>
+    <script type="text/javascript" src="script/xml3d.js"></script>
+    <script type="text/javascript" src="script/xml3d-camera.js"></script>
+    <script type="text/javascript" src="script/vendor/jquery.js"></script>
+    <script type="text/javascript" src="script/foundation.min.js"></script>
+
+    <!--<script type="text/javascript" src="../../../xml3d.js/build/output/xml3d.js"></script>-->
+    <title>XML3D Examples</title>
+    <script type="text/javascript">
+        window.addEventListener("load", function() {
+            //var transform = document.getElementById("default");
+            var transform = document.getElementById("cameraTransform");
+            window.DemoCamera = new XML3D.StandardCamera(transform, {
+                mode: "examine"
+            });
+        });
+
+    </script>
+</head>
+
+<body>
+    <div id="overall">
+        <div id="content">
+            <!--<h1>CSS Transforms</h1>-->
+
+            <xml3d id="MyXml3d" class="xml3d" width="600px" height="400px" view="#default">
+                <group style="transform: translate3d(0px, 2px, 20px)">
+                    <group id="headTransformGroup">
+                        <group id="cameraTransform">
+                            <group id="eyeTransform">
+                                <view id="default"></view>
+                            </group>
+                        </group>
+                    </group>
+                </group>
+                <!-- Scene Graph -->
+
+                <group style="scale3d(500,500,500)">
+                    <group style="transform: translateX(0px)">
+                        <model src="res/assets.xml#cube"></model>
+                    </group>
+
+                    <group style="transform: translateX(5px) scale3d(0.07,0.07,0.07)">
+                        <model src="res/assets.xml#teapot"></model>
+                    </group>
+
+                    <group style="transform: translateX(-5px) scale3d(0.07,0.07,0.07)">
+                        <model src="res/assets.xml#sniper">
+                            <assetdata name="base" includes="defaultAnim" compute="dataflow['protos.xml#skinning']">
+                                <float name="key">0.8</float>
+                            </assetdata>
+                        </model>
+                    </group>
+
+                    <group style="transform: translateX(-0px) translateZ(-10px) scale3d(1,1,1)">
+                        <mesh material="basic.xml#BodenMaterial-fx" src="basic.xml#BodenShape" type="triangles"></mesh>
+                    </group>
+
+                    <group style="transform: translateY(-5px) translateZ(0px) scale3d(1,1,1) rotate3d(1,0,0,90deg)">
+                        <mesh material="basic.xml#BodenMaterial-fx" src="basic.xml#BodenShape" type="triangles"></mesh>
+                    </group>
+
+                    <group style="transform: translateX(-10px) translateZ(0px) scale3d(1,1,1) rotate3d(0,1,0,90deg)">
+                        <mesh material="basic.xml#BodenMaterial-fx" src="basic.xml#BodenShape" type="triangles"></mesh>
+                    </group>
+
+                    <group style="transform: translateX(10px) translateZ(0px) scale3d(1,1,1) rotate3d(0,1,0,90deg)">
+                        <mesh material="basic.xml#BodenMaterial-fx" src="basic.xml#BodenShape" type="triangles"></mesh>
+                    </group>
+
+
+
+
+
+                    <group style="transform: translate3d(0px, 40px, 40px)">
+                        <light model="urn:xml3d:light:point">
+                            <float3 name="intensity">30 30 30</float3>
+                            <float3 name="attenuation">1 1 0</float3>
+                        </light>
+                    </group>
+                </group>
+
+            </xml3d>
+
+            <button id="VRenable">Enable VR</button>
+            <button id="ResetPos">Reset Position</button>
+        </div>
+    </div>
+
+</body>
+
+<script src='../xml3d-webvr-plugin.js'></script>
+
+</html>

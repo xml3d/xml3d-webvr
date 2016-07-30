@@ -1,0 +1,39 @@
+Implemented:
+	-Enter VR
+	-Rendering with 2 cameras
+	-Head rotation
+	-Stereoscopic 3D
+	-Head MOVEMENT
+	-Reset HMD position	
+	-Scale values which depend on meters as unit
+
+
+
+Not yet implemented:
+
+	-Latency testers (min, max, average):
+		* XML3D finished rendering -> submitFrame
+		* getPose -> XML3D uses pose
+		(current time deltas...)
+	-FPS counters (min, max, average, current)
+		* XML3D
+		* HMD
+	-Controller Support
+		* XBOX One Controller
+		* Vive Controller?
+	-User movement with collision detection
+	-FOV integration
+	-Synchronize XML3D Rendering with "Snapshots" taken by HMD
+	-Fix for new Chromium Version
+	-Buttons for leaving VR
+	-Dynamically create buttons
+
+	
+	
+
+
+Tested With:
+
+Works With:
+
+Does not work with:	
