@@ -1,5 +1,8 @@
 "use strict";
 
+//TODO: (Christian) break this up into multiple files and import what you need with require()
+//TODO: (Christian) maybe create the WebVR enable/reset buttons dynamically. Position them with style="position: fixed" in the bottom left corner
+
 /************************************************************
 REQUIREMENTS:
 
@@ -35,9 +38,9 @@ var HMD, gl, myCanvas;
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 
-
 //******************************************** Render the scene to HMD
 
+//TODO: (Christian) make this part of the RenderTree to ensure it's synced with XML3D
 //TODO: handle special cases, like HMD disconnected, exiting presentation, ...
 function onAnimationFrame() {
 
@@ -45,6 +48,8 @@ function onAnimationFrame() {
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
     if (HMD) {
+        //TODO: (Christian) replace window.requestAnimationFrame with your own function that returns HMD.requestAnimationFrame (once HMD is initialized)
+        //TODO: this should 'trick' XML3D into using the HMD's. Then you can move this whole function into the vrTree.
         // Ensures that scene is rendered at the right refresh rate for the primary HMD
         HMD.requestAnimationFrame(onAnimationFrame);
 
@@ -53,7 +58,7 @@ function onAnimationFrame() {
 
             // Get pose as late as possible to minimize latency!
             var pose = HMD.getPose();
-            
+
             // Rotation of the head:
             // Get the orientation (given as quaternion)
             var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
@@ -62,6 +67,7 @@ function onAnimationFrame() {
             // Update rotation attribute
             var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
             // Apply rotation transformation to head
+            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
             $("#headTransform").attr("rotation", oriString);
             
             // Movement of the head:
@@ -110,6 +116,7 @@ function vrRenderTree() {
     $("#eyeTransform").before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
     $("#eyeTransform").before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
 
+    //TODO: (Christian) jquery does some weird stuff in wrap(), try doing this manually (add group to DOM, remove view, add view under group)
     // Create a group around view to apply the eye transformation to
     // Dynamically creating this does not work with XML3D??
     //$("view").wrap('<group id="eyeTransform" transform="#defaultEyeTransform">');
@@ -227,6 +234,11 @@ function vrRenderTree() {
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
 
+                //TODO: (Christian) Could try using gl.viewPort to only render to the left/right side of the canvas. This
+                //TODO: could avoid the extra step of combining the left/right textures with the vr-shader. You would have to
+                //TODO: replace the .bind() function on the canvasTarget with your own though (check GLCanvasTarget in rendertarget.js in xml3d)
+
+                //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
                 XML3D.flushDOMChanges();
                 leftPass.renderTree(scene);
@@ -312,10 +324,14 @@ function vrRenderTree() {
     });
 
     //Create the VR-rendertree and activate it, using the renderinterface
+    //TODO: (Christian) find XML3D element by tag name instead of id
     var xml3dElement = document.getElementById("MyXml3d");
     var renderInterface = xml3dElement.getRenderInterface();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
+
+    //Christian: set XML3D to continuous rendering mode:
+    XML3D.options.setValue("renderer-continuous", true);
 };
 
 // ****************************************** Utility
@@ -358,6 +374,8 @@ function initiateVR() {
         // initialize VR render tree
         vrRenderTree();
 
+        //TODO: (Christian) Here you should replace window.requestAnimationFrame to return HMD.requestAnimationFrame.
+        //TODO onAnimationFrame can then be moved into vrTree and doesn't need to request its own animation frame from the HMD anymore
         // Start showing frames on HMD
         onAnimationFrame();
 

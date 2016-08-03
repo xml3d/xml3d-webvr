@@ -28,7 +28,11 @@ Not yet implemented:
 	-Buttons for leaving VR
 	-Dynamically create buttons
 
-	
+Christian:
+	-Add the plugin to xml3d-examples (https://github.com/xml3d/xml3d-examples) and test with the scenes there
+	-Test with a large scene (ie. kingsx from xml3d-demos). Also test with the broken texture build of xml3d.js
+	 since that should have much better fps (at the cost of broken textures)
+	-Try stats.js for fps measurements, Chromium dev tools Profiler and Timeline features to find bottlenecks
 	
 
 
