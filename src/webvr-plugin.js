@@ -20,21 +20,15 @@ For further information, please see development_status.txt
 *************************************************************/
 
 
-$(document).ready(function () {
-    // Adds listener to enable VR
-    document.getElementById("VRenable").addEventListener("click", function () {
-        initiateVR();
-    });
-    
-    // Adds listener to reset Position. 
-    document.getElementById("ResetPos").addEventListener("click", function () {
-        resetPosition();
-    });
-
+$(document).ready(function () {  
+   // Dynamically create VR-related buttons
+    setupButtons();  
 });
 
 // Some global variables
 var HMD, gl, myCanvas;
+// TODO: maybe use HMD.isPresenting() ?
+var inVR = false;
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 
@@ -381,6 +375,72 @@ function initiateVR() {
 
     });
 };
+
+// Helper function to create the VR-related buttons    
+function setupButtons() {    
+    
+    // TODO: include button css? (for hover)
+    var btnStyle = {
+        "width": "10rem",
+        "border -width": "0px",
+        "cursor": "pointer",
+        "font-family": '"Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif',
+        "font-weight": "normal",
+        "line-height": "normal",
+        "margin": "0 0 0rem",
+        "position": "relative",
+        "text-decoration": "none",
+        "text-align": "center",
+        "display": "inline-block",
+        "padding-top": "1rem",
+        "padding-right": "1rem",
+        "padding-bottom": "1rem",
+        "padding-left": "1rem",
+        "font-size": "1rem",
+        "background-color": "#008cba",
+        "color": "white",
+        "transition": "background-color 300ms ease-out"
+    };
+
+    $(".xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    
+    // Add the VRenable button
+    addVRenableBtn(btnStyle);  
+}
+
+// Add the "Enter VR" button
+function addVRenableBtn(btnStyle){
+    $("#ButtonBar").append("<button id='VRenable'>Enter VR</button>");
+    $("#VRenable").css(btnStyle);
+    
+    // Adds listener to enable VR
+    document.getElementById("VRenable").addEventListener("click", function () {
+        if (!(inVR)){
+            initiateVR();
+            $("#VRenable").html("Exit VR");
+            addResetBtn(btnStyle);
+            inVR = true;
+        }else{
+            // TODO: function to exit VR
+            $("#VRenable").html("Enter VR");
+            $("#ResetPos").remove();
+            inVR = false;
+        }
+       
+    });
+}
+
+// Add the "Reset Position" button
+function addResetBtn(btnStyle){
+    $("#ButtonBar").append("<button id='ResetPos'>Reset Position</button>");
+    $("#ResetPos").css(btnStyle);
+    
+    // Adds listener to reset Position. 
+    document.getElementById("ResetPos").addEventListener("click", function () {
+        resetPosition();
+    });
+}
+
 
 // Resets the pose of the HMD if it is not null
 function resetPosition() {

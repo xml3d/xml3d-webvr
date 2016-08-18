@@ -1,6 +1,9 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
+//TODO: (Christian) break this up into multiple files and import what you need with require()
+//TODO: (Christian) maybe create the WebVR enable/reset buttons dynamically. Position them with style="position: fixed" in the bottom left corner
+
 /************************************************************
 REQUIREMENTS:
 
@@ -10,48 +13,47 @@ In HTML DOM:
     
     button with id "VRenable" to enter VR
     button with id "ResetPos" to reset the position of the HMD
+    
+*************************************************************
+
+For further information, please see development_status.txt
 
 *************************************************************/
 
-$(document).ready(function () {
-    // Adds listener to enable VR
-    document.getElementById("VRenable").addEventListener("click", function () {
-        initiateVR();
-    });
-    
-    // Adds listener to reset Position. 
-    document.getElementById("ResetPos").addEventListener("click", function () {
-        resetPosition();
-    });
 
+$(document).ready(function () {  
+   // Dynamically create VR-related buttons
+    setupButtons();  
 });
 
 // Some global variables
 var HMD, gl, myCanvas;
+// TODO: maybe use HMD.isPresenting() ?
+var inVR = false;
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 
-
 //******************************************** Render the scene to HMD
 
+//TODO: (Christian) make this part of the RenderTree to ensure it's synced with XML3D
 //TODO: handle special cases, like HMD disconnected, exiting presentation, ...
-// + some old comments
 function onAnimationFrame() {
 
     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); 
     gl.clear(gl.DEPTH_BUFFER_BIT);
 
     if (HMD) {
+        //TODO: (Christian) replace window.requestAnimationFrame with your own function that returns HMD.requestAnimationFrame (once HMD is initialized)
+        //TODO: this should 'trick' XML3D into using the HMD's. Then you can move this whole function into the vrTree.
         // Ensures that scene is rendered at the right refresh rate for the primary HMD
         HMD.requestAnimationFrame(onAnimationFrame);
 
         if (HMD.isPresenting) {
             // Stereo view
-            // Show ExitVR-button
 
             // Get pose as late as possible to minimize latency!
             var pose = HMD.getPose();
-            
+
             // Rotation of the head:
             // Get the orientation (given as quaternion)
             var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
@@ -60,14 +62,13 @@ function onAnimationFrame() {
             // Update rotation attribute
             var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
             // Apply rotation transformation to head
+            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
             $("#headTransform").attr("rotation", oriString);
             
-            // NOT TESTED
             // Movement of the head:
             // Get position as 3D vector
             var position = pose.position ? pose.position : [0, 0, 0];
             // Convert to string
-            //var posiString = position.x + ' ' + position.y + ' ' + position.z;
             var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
             // Apply position transformation to head
             $("#headTransform").attr("translation", posiString);
@@ -94,10 +95,7 @@ function onAnimationFrame() {
 //******************************************** Custom RenderTree
 
 function vrRenderTree() {
-
-    console.log("creating custom tree");
-    console.log(XML3D);
-
+    console.log("creating custom render tree");
 
     var leftEye = HMD.getEyeParameters("left");
     var rightEye = HMD.getEyeParameters("right");
@@ -105,29 +103,19 @@ function vrRenderTree() {
     var rightOffset = rightEye.offset;
     
     // Prepare the headTransformGroup for use
-    $("#headTransformGroup").before('<transform id="headTransform"></transform>'); //necessary?
+    $("#headTransformGroup").before('<transform id="headTransform"></transform>');
     $("#headTransformGroup").attr("transform", "#headTransform")
 
     // Define the translations for the left/right eye
     $("#eyeTransform").before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-    //$("#eyeTransform").before('<transform id="leftEyeTransform" translation="0 50 5"></transform>');
     $("#eyeTransform").before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
     $("#eyeTransform").before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
 
+    //TODO: (Christian) jquery does some weird stuff in wrap(), try doing this manually (add group to DOM, remove view, add view under group)
     // Create a group around view to apply the eye transformation to
     // Dynamically creating this does not work with XML3D??
     //$("view").wrap('<group id="eyeTransform" transform="#defaultEyeTransform">');
     //$("#eyeTransform").append($("#Generated_Camera_Transform_0"));
-
-    //TODO: Still needed?
-    //var view = XML3D.XML3DViewElement;
-    /*var viewName = document.querySelector("xml3d").getAttribute("view");
-    console.log(viewName);
-    console.log(document.querySelector("xml3d"));
-
-    var view = document.getElementById("default") //TODO: make dis dependaple on viewName
-    console.log(view);
-    console.log(view.getViewMatrix());*/
 
     // TODO: Maybe change to leftEye + rightEye?
     var width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
@@ -135,8 +123,8 @@ function vrRenderTree() {
 
     console.log("x: " + width + ", y: " + height);
 
-    //TODO: old comment/vertex code
-    // Register the shader
+
+    // Register the VR shader
     XML3D.materials.register("vr-shader", {
         vertex: [
             "attribute vec3 position;",
@@ -206,6 +194,7 @@ function vrRenderTree() {
             // Uniform variables used by the shader 
             var uniformVariables = {};
             uniformVariables.canvasSize = [this.output.width, this.output.height];
+            
             // Left and right buffers will be rendered onto these
             uniformVariables.leftTexture = [this.inputs.leftTexture.colorTarget.handle];
             uniformVariables.rightTexture = [this.inputs.rightTexture.colorTarget.handle];
@@ -215,7 +204,7 @@ function vrRenderTree() {
             // Draw the full screen quad using the given shader program
             this.fullscreenQuad.draw(this.shaderProgram);
 
-            //TODO: old comment
+            // TODO: old comment
             // It's good practice to undo any changes you've made to the GL state after rendering
             // failure to do so can have unintended side effects in subsequent render passes!
             this.shaderProgram.unbind();
@@ -240,6 +229,11 @@ function vrRenderTree() {
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
 
+                //TODO: (Christian) Could try using gl.viewPort to only render to the left/right side of the canvas. This
+                //TODO: could avoid the extra step of combining the left/right textures with the vr-shader. You would have to
+                //TODO: replace the .bind() function on the canvasTarget with your own though (check GLCanvasTarget in rendertarget.js in xml3d)
+
+                //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
                 XML3D.flushDOMChanges();
                 leftPass.renderTree(scene);
@@ -325,10 +319,14 @@ function vrRenderTree() {
     });
 
     //Create the VR-rendertree and activate it, using the renderinterface
+    //TODO: (Christian) find XML3D element by tag name instead of id
     var xml3dElement = document.getElementById("MyXml3d");
     var renderInterface = xml3dElement.getRenderInterface();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
+
+    //Christian: set XML3D to continuous rendering mode:
+    XML3D.options.setValue("renderer-continuous", true);
 };
 
 // ****************************************** Utility
@@ -347,7 +345,7 @@ function initiateVR() {
         HMD = devices[0];
         console.log(HMD);
 
-        //myCanvas = document.getElementById("canvas");
+        // Get the Canvas
         myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
 
         gl = myCanvas.getContext('webgl');
@@ -364,18 +362,89 @@ function initiateVR() {
             source: myCanvas
         }]);
 
-        //resize the canvas
-        //TODO: currently not used, reimplement or not??
+        // resize the canvas
+        // TODO: currently not used, reimplement or not??
         //resize();
 
-        //initialize VR render tree
+        // initialize VR render tree
         vrRenderTree();
 
-        //Start showing frames on HMD
+        //TODO: (Christian) Here you should replace window.requestAnimationFrame to return HMD.requestAnimationFrame.
+        //TODO onAnimationFrame can then be moved into vrTree and doesn't need to request its own animation frame from the HMD anymore
+        // Start showing frames on HMD
         onAnimationFrame();
 
     });
 };
+
+// Helper function to create the VR-related buttons    
+function setupButtons() {    
+    
+    
+    // TODO: include button css? (for hover)
+    var btnStyle = {
+        "width": "10rem",
+        "border -width": "0px",
+        "cursor": "pointer",
+        "font-family": '"Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif',
+        "font-weight": "normal",
+        "line-height": "normal",
+        "margin": "0 0 0rem",
+        "position": "relative",
+        "text-decoration": "none",
+        "text-align": "center",
+        "display": "inline-block",
+        "padding-top": "1rem",
+        "padding-right": "1rem",
+        "padding-bottom": "1rem",
+        "padding-left": "1rem",
+        "font-size": "1rem",
+        "background-color": "#008cba",
+        "color": "white",
+        "transition": "background-color 300ms ease-out"
+    };
+
+    $(".xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    
+    // Add the VRenable button
+    addVRenableBtn(btnStyle);  
+}
+
+// Add the "Enter VR" button
+function addVRenableBtn(btnStyle){
+    $("#ButtonBar").append("<button id='VRenable'>Enter VR</button>");
+    $("#VRenable").css(btnStyle);
+    
+    // Adds listener to enable VR
+    document.getElementById("VRenable").addEventListener("click", function () {
+        if (!(inVR)){
+            initiateVR();
+            $("#VRenable").html("Exit VR");
+            addResetBtn(btnStyle);
+            inVR = true;
+        }else{
+            // TODO: function to exit VR
+            $("#VRenable").html("Enter VR");
+            $("#ResetPos").remove();
+            inVR = false;
+        }
+       
+    });
+}
+
+// Add the "Reset Position" button
+function addResetBtn(btnStyle){
+    $("#ButtonBar").append("<button id='ResetPos'>Reset Position</button>");
+    $("#ResetPos").css(btnStyle);
+    
+    // Adds listener to reset Position. 
+    document.getElementById("ResetPos").addEventListener("click", function () {
+        resetPosition();
+    });
+}
+
+
+
 
 // Resets the pose of the HMD if it is not null
 function resetPosition() {
