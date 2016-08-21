@@ -2,6 +2,8 @@ var utility = module.exports = {};
  
 var render = require("./render.js");
 
+var orig_requestAnimationFrame = window.requestAnimationFrame;
+
 // Initiates VR, user interaction necessary
 utility.initiateVR = function() {
     navigator.getVRDisplays().then(function (devices) {
@@ -40,11 +42,11 @@ utility.initiateVR = function() {
         // initialize VR render tree
         render.vrRenderTree();
 
-        //TODO: (Christian) Here you should replace window.requestAnimationFrame to return HMD.requestAnimationFrame.
-        //TODO onAnimationFrame can then be moved into vrTree and doesn't need to request its own animation frame from the HMD anymore
-        // Start showing frames on HMD
-        render.onAnimationFrame();
-
+        // Replace the original window.requestAnimationFrame() with the one for the HMD
+        // .requestAnimationFrame() will be called by XML3D
+        window.requestAnimationFrame = function(callback){
+            HMD.requestAnimationFrame(callback);
+        };
     });
 };
 

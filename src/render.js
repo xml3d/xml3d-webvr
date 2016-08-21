@@ -2,72 +2,9 @@ var render = module.exports = {};
 
 var scale = 10.0;
 
-//******************************************** Render the scene to HMD
-
-//TODO: (Christian) make this part of the RenderTree to ensure it's synced with XML3D
-//TODO: handle special cases, like HMD disconnected, exiting presentation, ...
-
-
-render.onAnimationFrame = function(){
-//function onAnimationFrame() {
-
-    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); 
-    gl.clear(gl.DEPTH_BUFFER_BIT);
-
-    if (HMD) {
-        //TODO: (Christian) replace window.requestAnimationFrame with your own function that returns HMD.requestAnimationFrame (once HMD is initialized)
-        //TODO: this should 'trick' XML3D into using the HMD's. Then you can move this whole function into the vrTree.
-        // Ensures that scene is rendered at the right refresh rate for the primary HMD
-        HMD.requestAnimationFrame(render.onAnimationFrame);
-
-        if (HMD.isPresenting) {
-            // Stereo view
-
-            // Get pose as late as possible to minimize latency!
-            var pose = HMD.getPose();
-
-            // Rotation of the head:
-            // Get the orientation (given as quaternion)
-            var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
-            // Transform into axis + angle
-            var orientationAA = new XML3D.AxisAngle.fromQuat(new XML3D.Quat(orientationQ[0], orientationQ[1], orientationQ[2], orientationQ[3]));
-            // Update rotation attribute
-            var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
-            // Apply rotation transformation to head
-            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
-            $("#headTransform").attr("rotation", oriString);
-            
-            // Movement of the head:
-            // Get position as 3D vector
-            var position = pose.position ? pose.position : [0, 0, 0];
-            // Convert to string
-            var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
-            // Apply position transformation to head
-            $("#headTransform").attr("translation", posiString);
-            
-
-
-            HMD.submitFrame(pose);
-        } else {
-            // Mono view
-            // Show VR Button
-        }
-    } else {
-        HMD.requestAnimationFrame(render.onAnimationFrame);
-
-        // No VRDisplay found
-        // Return to mono view
-        // Hide VR-button
-    }
-
-}
-
-
-
 //******************************************** Custom RenderTree
 
 render.vrRenderTree = function(){
-//function vrRenderTree() {
     console.log("creating custom render tree");
 
     var leftEye = HMD.getEyeParameters("left");
@@ -196,6 +133,39 @@ render.vrRenderTree = function(){
             if (this.processed)
                 return;
             this.processed = true;
+            
+            // This was previously in onAnimationFrame
+            //if (HMD.isPresenting) {
+                // Stereo view
+
+                // Get pose as late as possible to minimize latency!
+                var pose = HMD.getPose();
+
+                // Rotation of the head:
+                // Get the orientation (given as quaternion)
+                var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
+                // Transform into axis + angle
+                var orientationAA = new XML3D.AxisAngle.fromQuat(new XML3D.Quat(orientationQ[0], orientationQ[1], orientationQ[2], orientationQ[3]));
+                // Update rotation attribute
+                var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
+                // Apply rotation transformation to head
+                //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
+                $("#headTransform").attr("rotation", oriString);
+
+                // Movement of the head:
+                // Get position as 3D vector
+                var position = pose.position ? pose.position : [0, 0, 0];
+                // Convert to string
+                var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
+                // Apply position transformation to head
+                $("#headTransform").attr("translation", posiString);
+
+
+
+                //HMD.submitFrame(pose);
+            //}
+            
+            
 
             var i = this.prePasses.length;
             if (i == 2) {
@@ -222,6 +192,8 @@ render.vrRenderTree = function(){
                     this.prePasses[i].renderTree(scene);
             }
             this.render(scene);
+            
+            HMD.submitFrame(pose);
         },
     });
 
