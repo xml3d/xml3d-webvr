@@ -34,6 +34,9 @@ utility.initiateVR = function() {
         HMD.requestPresent([{
             source: myCanvas
         }]);
+        
+        // Set FOV
+        setFOV();
 
         // resize the canvas
         // TODO: currently not used, reimplement or not??
@@ -121,4 +124,66 @@ function resetPosition() {
     if (HMD){
         HMD.resetPose();
     }  
+}
+
+// Sets the FOV in the view element
+function setFOV(){
+    var fov, zNear, zFar;
+    zNear = 0.0001;
+    zFar = 100000;
+    // Assumes left and right FOV are equal
+    // TODO: Not necessarily equal, possibly set FOV per left/right view?
+    fov = HMD.getEyeParameters("right").fieldOfView;
+    console.log(HMD);
+    console.log("FOV: ");
+    console.log(fov);
+    
+    var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
+    
+    console.log(arrayToString(projectionMatrix));
+    
+    //TODO: Test
+    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>"
+    //$("view").attr("model", "urn:xml3d:view:projective");
+    //$("view").append(matrixString);
+    //XML3D.flushDOMChanges();
+}
+
+// Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
+function fieldOfViewToProjectionMatrix (fov, zNear, zFar) {
+  var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
+  var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
+  var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
+  var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
+  var xScale = 2.0 / (leftTan + rightTan);
+  var yScale = 2.0 / (upTan + downTan);
+
+  var out = new Float32Array(16);
+  out[0] = xScale;
+  out[1] = 0.0;
+  out[2] = 0.0;
+  out[3] = 0.0;
+  out[4] = 0.0;
+  out[5] = yScale;
+  out[6] = 0.0;
+  out[7] = 0.0;
+  out[8] = -((leftTan - rightTan) * xScale * 0.5);
+  out[9] = ((upTan - downTan) * yScale * 0.5);
+  out[10] = -(zNear + zFar) / (zFar - zNear);
+  out[11] = -1.0;
+  out[12] = 0.0;
+  out[13] = 0.0;
+  out[14] = -(2.0 * zFar * zNear) / (zFar - zNear);
+  out[15] = 0.0;
+
+  return out;
+}
+
+// Returns array as a String with format: "[1] [2] [3] ..."
+function arrayToString(array){
+    var result = "";
+    for (var i = 0; i < array.length; i++){
+        result = result + " " + array[i];
+    }
+    return result;
 }
