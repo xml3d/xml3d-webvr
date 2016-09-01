@@ -6,6 +6,9 @@ Implemented:
 	-Head MOVEMENT
 	-Reset HMD position	
 	-Scale values which depend on meters as unit
+	-FOV integration
+	-Synchronize XML3D Rendering with "Snapshots" taken by HMD
+	-Dynamically create buttons
 
 
 
@@ -22,11 +25,8 @@ Not yet implemented:
 		* XBOX One Controller
 		* Vive Controller?
 	-User movement with collision detection
-	-FOV integration
-	-Synchronize XML3D Rendering with "Snapshots" taken by HMD
-	-Fix for new Chromium Version
 	-Buttons for leaving VR
-	-Dynamically create buttons
+	
 
 Christian:
 	-Add the plugin to xml3d-examples (https://github.com/xml3d/xml3d-examples) and test with the scenes there

@@ -27,4 +27,3 @@ var HMD, gl, myCanvas;
 // TODO: maybe use HMD.isPresenting() ?
 //var inVR = false;
 global.inVR = false;
-// Scales values dat WebVR gives in metres
