@@ -32,6 +32,7 @@ render.vrRenderTree = function(){
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
 
+    gl.enable(gl.SCISSOR_TEST);
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -108,6 +109,7 @@ render.vrRenderTree = function(){
 
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
+                gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
                 //leftPass.renderTree(scene);
@@ -115,6 +117,7 @@ render.vrRenderTree = function(){
                 
                 
                 $("#eyeTransform").attr("transform", "#rightEyeTransform");
+                gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
                 //rightPass.renderTree(scene);
