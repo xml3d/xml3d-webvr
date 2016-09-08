@@ -1,6 +1,7 @@
 var utility = module.exports = {};
  
-var render = require("./render.js");
+//var render = require("./render.js");
+var render = require("./render_viewports.js");
 
 var orig_requestAnimationFrame = window.requestAnimationFrame;
 
