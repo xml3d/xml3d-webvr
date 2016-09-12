@@ -2,6 +2,7 @@ var render = module.exports = {};
 
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
+var translationScale = 3.0;
 
 //******************************************** Custom RenderTree
 
@@ -136,48 +137,36 @@ render.vrRenderTree = function(){
             if (this.processed)
                 return;
             this.processed = true;
-            
-            // This was previously in onAnimationFrame
-            //if (HMD.isPresenting) {
-                // Stereo view
 
-                // Get pose as late as possible to minimize latency!
-                var pose = HMD.getPose();
+            // Stereo view
 
-                // Rotation of the head:
-                // Get the orientation (given as quaternion)
-                var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
-                // Transform into axis + angle
-                var orientationAA = new XML3D.AxisAngle.fromQuat(new XML3D.Quat(orientationQ[0], orientationQ[1], orientationQ[2], orientationQ[3]));
-                // Update rotation attribute
-                var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
-                // Apply rotation transformation to head
-                //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
-                $("#headTransform").attr("rotation", oriString);
+            // Get pose as late as possible to minimize latency!
+            var pose = HMD.getPose();
 
-                // Movement of the head:
-                // Get position as 3D vector
-                var position = pose.position ? pose.position : [0, 0, 0];
-                // Convert to string
-                var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
-                // Apply position transformation to head
-                $("#headTransform").attr("translation", posiString);
+            // Rotation of the head:
+            // Get the orientation (given as quaternion)
+            var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
+            // Transform into axis + angle
+            var orientationAA = new XML3D.AxisAngle.fromQuat(new XML3D.Quat(orientationQ[0], orientationQ[1], orientationQ[2], orientationQ[3]));
+            // Update rotation attribute
+            var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
+            // Apply rotation transformation to head
+            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
+            $("#headTransform").attr("rotation", oriString);
 
-
-
-                //HMD.submitFrame(pose);
-            //}
-            
+            // Movement of the head:
+            // Get position as 3D vector
+            var position = pose.position ? pose.position : [0, 0, 0];
+            // Convert to string
+            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
+            // Apply position transformation to head
+            $("#headTransform").attr("translation", posiString);
             
 
             var i = this.prePasses.length;
             if (i == 2) {
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
-
-                //TODO: (Christian) Could try using gl.viewPort to only render to the left/right side of the canvas. This
-                //TODO: could avoid the extra step of combining the left/right textures with the vr-shader. You would have to
-                //TODO: replace the .bind() function on the canvasTarget with your own though (check GLCanvasTarget in rendertarget.js in xml3d)
 
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
@@ -213,7 +202,6 @@ render.vrRenderTree = function(){
         createRenderPasses: function () {
             var context = this.renderInterface.context;
 
-            //TODO: use function to create buffers (instead of copy paste)
             // Create the left and right Framebuffers, one for each eye
             var leftBuffer = this.renderInterface.createRenderTarget({
                 width: leftEye.renderWidth,

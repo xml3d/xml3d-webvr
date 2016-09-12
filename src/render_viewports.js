@@ -2,6 +2,7 @@ var render = module.exports = {};
 
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
+var translationScale = 3.0;
 
 //******************************************** Custom RenderTree
 
@@ -37,11 +38,8 @@ render.vrRenderTree = function(){
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
         XML3D.webgl.BaseRenderPass.call(this, renderInterface, output, opt);
-
-        // The left and right passes will be combined onto this fullscreen quad
-        //this.fullscreenQuad = renderInterface.createFullscreenQuad();
-
     };
+    
     XML3D.createClass(VRPass, XML3D.webgl.BaseRenderPass);
     XML3D.extend(VRPass.prototype, {
         render: function (scene) {
@@ -90,7 +88,7 @@ render.vrRenderTree = function(){
             // Get position as 3D vector
             var position = pose.position ? pose.position : [0, 0, 0];
             // Convert to string
-            var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
+            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
             // Apply position transformation to head
             $("#headTransform").attr("translation", posiString);
 
@@ -103,16 +101,11 @@ render.vrRenderTree = function(){
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
 
-                //TODO: (Christian) Could try using gl.viewPort to only render to the left/right side of the canvas. This
-                //TODO: could avoid the extra step of combining the left/right textures with the vr-shader. You would have to
-                //TODO: replace the .bind() function on the canvasTarget with your own though (check GLCanvasTarget in rendertarget.js in xml3d)
-
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
                 gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
-                //leftPass.renderTree(scene);
                 leftPass.render(scene);
                 
                 
@@ -120,7 +113,6 @@ render.vrRenderTree = function(){
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
-                //rightPass.renderTree(scene);
                 rightPass.render(scene);
                 
 
@@ -148,20 +140,8 @@ render.vrRenderTree = function(){
             var context = this.renderInterface.context;
 
             var empty = function () {};
-            /*
-            XML3D.extend(context.canvasTarget.prototype, {
-                getWidth: function () {
-                    return this.width;
-                }, getHeight: function () {
-                    return this.height;
-                }, getScale: function () {
-                    return 1;
-                }, bind: empty
-                , unbind: empty
-                , resize: empty
-                , new: empty
-            });*/
-            
+
+            // Make sure the vieport cannot be reset with .bind()
             context.canvasTarget.__proto__.bind = empty;
             
             var leftPass = this.renderInterface.createSceneRenderPass();

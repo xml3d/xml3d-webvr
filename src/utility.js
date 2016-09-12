@@ -1,7 +1,7 @@
 var utility = module.exports = {};
  
-//var render = require("./render.js");
-var render = require("./render_viewports.js");
+//var render = require("./render.js");              // Uses a shader to combine the 2 views from buffers to the canvas
+var render = require("./render_viewports.js");      // Uses viewports to directly render onto the canvas
 
 var orig_requestAnimationFrame = window.requestAnimationFrame;
 
@@ -24,21 +24,13 @@ utility.initiateVR = function() {
 
         gl = myCanvas.getContext('webgl');
         
-        // TODO: reposition code
+        // TODO: reposition code?
         // Setting canvas size
         var leftEye = HMD.getEyeParameters("left");
         var rightEye = HMD.getEyeParameters("right");
         gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
         gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
         console.log("Canvas: " + gl.canvas.height + ", " + gl.canvas.width);
-
-        // GL settings, necessary??
-        // If no color is defined, background for HMD will be black
-        //gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        // Near things obscure far things
-        //gl.depthFunc(gl.LEQUAL);
-        // Clear the color as well as the depth buffer.
-        //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         HMD.requestPresent([{
             source: myCanvas
@@ -160,10 +152,7 @@ function setFOV(){
     console.log(fov);
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
-    
-    //console.log(arrayToString(projectionMatrix));
-    
-    //TODO: Fix distortion
+        
     var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>"
     $("view").attr("model", "urn:xml3d:view:projective");
     $("view").append(matrixString);
@@ -181,16 +170,8 @@ function fieldOfViewToProjectionMatrix (fov, zNear, zFar) {
   var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
   var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
     
-    // Swap left/up and right/down
-/*var leftTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
-var rightTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
-var upTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
-var downTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);*/
   var xScale = 2.0 / (leftTan + rightTan);
   var yScale = 2.0 / (upTan + downTan);
-    
-    
-
 
   var out = new Float32Array(16);
   out[0] = xScale;

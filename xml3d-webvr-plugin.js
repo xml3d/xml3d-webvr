@@ -3,6 +3,7 @@ var render = module.exports = {};
 
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
+var translationScale = 3.0;
 
 //******************************************** Custom RenderTree
 
@@ -38,11 +39,8 @@ render.vrRenderTree = function(){
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
         XML3D.webgl.BaseRenderPass.call(this, renderInterface, output, opt);
-
-        // The left and right passes will be combined onto this fullscreen quad
-        //this.fullscreenQuad = renderInterface.createFullscreenQuad();
-
     };
+    
     XML3D.createClass(VRPass, XML3D.webgl.BaseRenderPass);
     XML3D.extend(VRPass.prototype, {
         render: function (scene) {
@@ -91,7 +89,7 @@ render.vrRenderTree = function(){
             // Get position as 3D vector
             var position = pose.position ? pose.position : [0, 0, 0];
             // Convert to string
-            var posiString = position[0] * scale + ' ' + position[1] * scale + ' ' + position[2] * scale;
+            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
             // Apply position transformation to head
             $("#headTransform").attr("translation", posiString);
 
@@ -104,16 +102,11 @@ render.vrRenderTree = function(){
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
 
-                //TODO: (Christian) Could try using gl.viewPort to only render to the left/right side of the canvas. This
-                //TODO: could avoid the extra step of combining the left/right textures with the vr-shader. You would have to
-                //TODO: replace the .bind() function on the canvasTarget with your own though (check GLCanvasTarget in rendertarget.js in xml3d)
-
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
                 $("#eyeTransform").attr("transform", "#leftEyeTransform");
                 gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
-                //leftPass.renderTree(scene);
                 leftPass.render(scene);
                 
                 
@@ -121,7 +114,6 @@ render.vrRenderTree = function(){
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
-                //rightPass.renderTree(scene);
                 rightPass.render(scene);
                 
 
@@ -149,20 +141,8 @@ render.vrRenderTree = function(){
             var context = this.renderInterface.context;
 
             var empty = function () {};
-            /*
-            XML3D.extend(context.canvasTarget.prototype, {
-                getWidth: function () {
-                    return this.width;
-                }, getHeight: function () {
-                    return this.height;
-                }, getScale: function () {
-                    return 1;
-                }, bind: empty
-                , unbind: empty
-                , resize: empty
-                , new: empty
-            });*/
-            
+
+            // Make sure the vieport cannot be reset with .bind()
             context.canvasTarget.__proto__.bind = empty;
             
             var leftPass = this.renderInterface.createSceneRenderPass();
@@ -202,8 +182,8 @@ render.vrRenderTree = function(){
 (function (global){
 var utility = module.exports = {};
  
-//var render = require("./render.js");
-var render = require("./render_viewports.js");
+//var render = require("./render.js");              // Uses a shader to combine the 2 views from buffers to the canvas
+var render = require("./render_viewports.js");      // Uses viewports to directly render onto the canvas
 
 var orig_requestAnimationFrame = window.requestAnimationFrame;
 
@@ -226,21 +206,13 @@ utility.initiateVR = function() {
 
         gl = myCanvas.getContext('webgl');
         
-        // TODO: reposition code
+        // TODO: reposition code?
         // Setting canvas size
         var leftEye = HMD.getEyeParameters("left");
         var rightEye = HMD.getEyeParameters("right");
         gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
         gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
         console.log("Canvas: " + gl.canvas.height + ", " + gl.canvas.width);
-
-        // GL settings, necessary??
-        // If no color is defined, background for HMD will be black
-        //gl.clearColor(1.0, 1.0, 1.0, 1.0);
-        // Near things obscure far things
-        //gl.depthFunc(gl.LEQUAL);
-        // Clear the color as well as the depth buffer.
-        //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         HMD.requestPresent([{
             source: myCanvas
@@ -362,10 +334,7 @@ function setFOV(){
     console.log(fov);
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
-    
-    //console.log(arrayToString(projectionMatrix));
-    
-    //TODO: Fix distortion
+        
     var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>"
     $("view").attr("model", "urn:xml3d:view:projective");
     $("view").append(matrixString);
@@ -383,16 +352,8 @@ function fieldOfViewToProjectionMatrix (fov, zNear, zFar) {
   var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
   var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
     
-    // Swap left/up and right/down
-/*var leftTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
-var rightTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
-var upTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
-var downTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);*/
   var xScale = 2.0 / (leftTan + rightTan);
   var yScale = 2.0 / (upTan + downTan);
-    
-    
-
 
   var out = new Float32Array(16);
   out[0] = xScale;
