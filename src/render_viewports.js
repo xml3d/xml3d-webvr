@@ -14,20 +14,26 @@ render.vrRenderTree = function(){
     var leftOffset = leftEye.offset;
     var rightOffset = rightEye.offset;
     
+    // cache jQuery lookups
+    var $eyeTransform = $("#eyeTransform");
+    var $headTransformGroup = $("#headTransformGroup");
+    
     // Prepare the headTransformGroup for use
-    $("#headTransformGroup").before('<transform id="headTransform"></transform>');
-    $("#headTransformGroup").attr("transform", "#headTransform")
+    $headTransformGroup.before('<transform id="headTransform"></transform>');
+    $headTransformGroup.attr("transform", "#headTransform")
+    
+    var $headTransform = $("#headTransform");
 
     // Define the translations for the left/right eye
-    $("#eyeTransform").before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-    $("#eyeTransform").before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
-    $("#eyeTransform").before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
+    $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
+    $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+    $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
 
     //TODO: (Christian) jquery does some weird stuff in wrap(), try doing this manually (add group to DOM, remove view, add view under group)
     // Create a group around view to apply the eye transformation to
     // Dynamically creating this does not work with XML3D??
     //$("view").wrap('<group id="eyeTransform" transform="#defaultEyeTransform">');
-    //$("#eyeTransform").append($("#Generated_Camera_Transform_0"));
+    //$eyeTransform.append($("#Generated_Camera_Transform_0"));
     
     gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
@@ -81,8 +87,7 @@ render.vrRenderTree = function(){
             // Update rotation attribute
             var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
             // Apply rotation transformation to head
-            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
-            $("#headTransform").attr("rotation", oriString);
+            $headTransform.attr("rotation", oriString);
 
             // Movement of the head:
             // Get position as 3D vector
@@ -90,7 +95,7 @@ render.vrRenderTree = function(){
             // Convert to string
             var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
             // Apply position transformation to head
-            $("#headTransform").attr("translation", posiString);
+            $headTransform.attr("translation", posiString);
 
             
             var leftEye = HMD.getEyeParameters("left");
@@ -102,14 +107,16 @@ render.vrRenderTree = function(){
                 var leftPass = this.prePasses[1];
 
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
-                $("#eyeTransform").attr("transform", "#leftEyeTransform");
+                //$("#eyeTransform").attr("transform", "#leftEyeTransform");
+                $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
                 
-                $("#eyeTransform").attr("transform", "#rightEyeTransform");
+                //$("#eyeTransform").attr("transform", "#rightEyeTransform");
+                $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();

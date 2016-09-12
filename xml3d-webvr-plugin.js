@@ -15,20 +15,26 @@ render.vrRenderTree = function(){
     var leftOffset = leftEye.offset;
     var rightOffset = rightEye.offset;
     
+    // cache jQuery lookups
+    var $eyeTransform = $("#eyeTransform");
+    var $headTransformGroup = $("#headTransformGroup");
+    
     // Prepare the headTransformGroup for use
-    $("#headTransformGroup").before('<transform id="headTransform"></transform>');
-    $("#headTransformGroup").attr("transform", "#headTransform")
+    $headTransformGroup.before('<transform id="headTransform"></transform>');
+    $headTransformGroup.attr("transform", "#headTransform")
+    
+    var $headTransform = $("#headTransform");
 
     // Define the translations for the left/right eye
-    $("#eyeTransform").before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-    $("#eyeTransform").before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
-    $("#eyeTransform").before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
+    $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
+    $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+    $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
 
     //TODO: (Christian) jquery does some weird stuff in wrap(), try doing this manually (add group to DOM, remove view, add view under group)
     // Create a group around view to apply the eye transformation to
     // Dynamically creating this does not work with XML3D??
     //$("view").wrap('<group id="eyeTransform" transform="#defaultEyeTransform">');
-    //$("#eyeTransform").append($("#Generated_Camera_Transform_0"));
+    //$eyeTransform.append($("#Generated_Camera_Transform_0"));
     
     gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
@@ -82,8 +88,7 @@ render.vrRenderTree = function(){
             // Update rotation attribute
             var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
             // Apply rotation transformation to head
-            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
-            $("#headTransform").attr("rotation", oriString);
+            $headTransform.attr("rotation", oriString);
 
             // Movement of the head:
             // Get position as 3D vector
@@ -91,7 +96,7 @@ render.vrRenderTree = function(){
             // Convert to string
             var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
             // Apply position transformation to head
-            $("#headTransform").attr("translation", posiString);
+            $headTransform.attr("translation", posiString);
 
             
             var leftEye = HMD.getEyeParameters("left");
@@ -103,14 +108,16 @@ render.vrRenderTree = function(){
                 var leftPass = this.prePasses[1];
 
                 //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
-                $("#eyeTransform").attr("transform", "#leftEyeTransform");
+                //$("#eyeTransform").attr("transform", "#leftEyeTransform");
+                $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
                 
-                $("#eyeTransform").attr("transform", "#rightEyeTransform");
+                //$("#eyeTransform").attr("transform", "#rightEyeTransform");
+                $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
@@ -264,22 +271,27 @@ utility.setupButtons = function() {
     utility.addVRenableBtn(btnStyle);  
 }
 
+var $ResetPos = $("#ResetPos");
 // Add the "Enter VR" button
 utility.addVRenableBtn = function(btnStyle) {
-    $("#ButtonBar").append("<button id='VRenable'>Enter VR</button>");
-    $("#VRenable").css(btnStyle);
+    var $VREnable = $("#VRenable");
+    var $ButtonBar = $("#ButtonBar");
+    var $ResetPos = $("#ResetPos");
+    
+    $ButtonBar.append("<button id='VRenable'>Enter VR</button>");
+    $VREnable.css(btnStyle);
     
     // Adds listener to enable VR
     document.getElementById("VRenable").addEventListener("click", function () {
         if (!(global.inVR)){
             utility.initiateVR();
-            $("#VRenable").html("Exit VR");
+            $VREnable.html("Exit VR");
             utility.addResetBtn(btnStyle);
             inVR = true;
         }else{
             // TODO: function to exit VR
-            $("#VRenable").html("Enter VR");
-            $("#ResetPos").remove();
+            $VREnable.html("Enter VR");
+            $ResetPos.remove();
             inVR = false;
         }
        
@@ -288,8 +300,10 @@ utility.addVRenableBtn = function(btnStyle) {
 
 // Add the "Reset Position" button
 utility.addResetBtn = function(btnStyle) {
-    $("#ButtonBar").append("<button id='ResetPos'>Reset Position</button>");
-    $("#ResetPos").css(btnStyle);
+    var $ButtonBar = $("#ButtonBar");
+    var $ResetPos = $("#ResetPos");
+    $ButtonBar.append("<button id='ResetPos'>Reset Position</button>");
+    $ResetPos.css(btnStyle);
     
     // Adds listener to reset Position. 
     document.getElementById("ResetPos").addEventListener("click", function () {
@@ -330,19 +344,20 @@ function setFOV(){
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
-    console.log("FOV: ");
-    console.log(fov);
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
         
-    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>"
-    $("view").attr("model", "urn:xml3d:view:projective");
-    $("view").append(matrixString);
+    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+    var $view = $("view");
+    var $fovProjection = $("#fovProjection");
+    
+    $view.attr("model", "urn:xml3d:view:projective");
+    $view.append(matrixString);
     
     
-    $("#fovProjection").attr("transform", "#fovTransform");
-    $("#fovProjection").attr("matrix3d", arrayToString(projectionMatrix));
-    $("#fovProjection").before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
+    $fovProjection.attr("transform", "#fovTransform");
+    $fovProjection.attr("matrix3d", arrayToString(projectionMatrix));
+    $fovProjection.before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
@@ -414,7 +429,6 @@ $(document).ready(function () {
 // Some global variables
 var HMD, gl, myCanvas;
 // TODO: maybe use HMD.isPresenting() ?
-//var inVR = false;
 global.inVR = false;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})

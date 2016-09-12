@@ -33,7 +33,9 @@ Christian:
 	-Test with a large scene (ie. kingsx from xml3d-demos). Also test with the broken texture build of xml3d.js
 	 since that should have much better fps (at the cost of broken textures)
 	-Try stats.js for fps measurements, Chromium dev tools Profiler and Timeline features to find bottlenecks
-	
+
+Known Bugs:
+	-render-distance (zFar) does not update with headposition	
 
 
 Tested With:

@@ -82,22 +82,27 @@ utility.setupButtons = function() {
     utility.addVRenableBtn(btnStyle);  
 }
 
+var $ResetPos = $("#ResetPos");
 // Add the "Enter VR" button
 utility.addVRenableBtn = function(btnStyle) {
-    $("#ButtonBar").append("<button id='VRenable'>Enter VR</button>");
-    $("#VRenable").css(btnStyle);
+    var $VREnable = $("#VRenable");
+    var $ButtonBar = $("#ButtonBar");
+    var $ResetPos = $("#ResetPos");
+    
+    $ButtonBar.append("<button id='VRenable'>Enter VR</button>");
+    $VREnable.css(btnStyle);
     
     // Adds listener to enable VR
     document.getElementById("VRenable").addEventListener("click", function () {
         if (!(global.inVR)){
             utility.initiateVR();
-            $("#VRenable").html("Exit VR");
+            $VREnable.html("Exit VR");
             utility.addResetBtn(btnStyle);
             inVR = true;
         }else{
             // TODO: function to exit VR
-            $("#VRenable").html("Enter VR");
-            $("#ResetPos").remove();
+            $VREnable.html("Enter VR");
+            $ResetPos.remove();
             inVR = false;
         }
        
@@ -106,8 +111,10 @@ utility.addVRenableBtn = function(btnStyle) {
 
 // Add the "Reset Position" button
 utility.addResetBtn = function(btnStyle) {
-    $("#ButtonBar").append("<button id='ResetPos'>Reset Position</button>");
-    $("#ResetPos").css(btnStyle);
+    var $ButtonBar = $("#ButtonBar");
+    var $ResetPos = $("#ResetPos");
+    $ButtonBar.append("<button id='ResetPos'>Reset Position</button>");
+    $ResetPos.css(btnStyle);
     
     // Adds listener to reset Position. 
     document.getElementById("ResetPos").addEventListener("click", function () {
@@ -148,19 +155,20 @@ function setFOV(){
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
-    console.log("FOV: ");
-    console.log(fov);
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
         
-    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>"
-    $("view").attr("model", "urn:xml3d:view:projective");
-    $("view").append(matrixString);
+    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+    var $view = $("view");
+    var $fovProjection = $("#fovProjection");
+    
+    $view.attr("model", "urn:xml3d:view:projective");
+    $view.append(matrixString);
     
     
-    $("#fovProjection").attr("transform", "#fovTransform");
-    $("#fovProjection").attr("matrix3d", arrayToString(projectionMatrix));
-    $("#fovProjection").before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
+    $fovProjection.attr("transform", "#fovTransform");
+    $fovProjection.attr("matrix3d", arrayToString(projectionMatrix));
+    $fovProjection.before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview

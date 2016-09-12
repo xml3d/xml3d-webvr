@@ -25,5 +25,4 @@ $(document).ready(function () {
 // Some global variables
 var HMD, gl, myCanvas;
 // TODO: maybe use HMD.isPresenting() ?
-//var inVR = false;
 global.inVR = false;
