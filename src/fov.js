@@ -31,12 +31,7 @@ fov.setFOV = function(){
     
     $view.attr("model", "urn:xml3d:view:projective");
     $view.append(matrixString);
-    
-    /*
-    $fovProjection.attr("transform", "#fovTransform");
-    $fovProjection.attr("matrix3d", arrayToString(projectionMatrix));
-    $fovProjection.before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
-    */
+
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview

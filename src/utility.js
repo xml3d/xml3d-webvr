@@ -35,9 +35,6 @@ utility.initiateVR = function() {
         HMD.requestPresent([{
             source: myCanvas
         }]);
-        
-        // Set FOV
-        //setFOV();
 
         // initialize VR render tree
         render.vrRenderTree();
@@ -121,7 +118,6 @@ utility.addResetBtn = function(btnStyle) {
         resetPosition();
     });
 }
-
 
 // Resets the pose of the HMD if it is not null
 function resetPosition() {

@@ -32,12 +32,7 @@ fov.setFOV = function(){
     
     $view.attr("model", "urn:xml3d:view:projective");
     $view.append(matrixString);
-    
-    /*
-    $fovProjection.attr("transform", "#fovTransform");
-    $fovProjection.attr("matrix3d", arrayToString(projectionMatrix));
-    $fovProjection.before('<transform id="fovTransform" matrix3d="' + arrayToString(projectionMatrix) + '"></transform>');
-    */
+
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
@@ -139,9 +134,7 @@ render.vrRenderTree = function(){
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.disable(gl.DEPTH_TEST);
 
-            // TODO: old comment
-            // It's good practice to undo any changes you've made to the GL state after rendering
-            // failure to do so can have unintended side effects in subsequent render passes!
+            // Undo any changes made to the GL state after rendering
             this.output.unbind();
             gl.enable(gl.DEPTH_TEST);
         },
@@ -191,16 +184,13 @@ render.vrRenderTree = function(){
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
 
-                //TODO: (Christian) cache this jquery lookup as this.eyeTransform up in the constructor for better performance
-                //$("#eyeTransform").attr("transform", "#leftEyeTransform");
+                // Only render to one half of the canvas
                 $eyeTransform.attr("transform", "#leftEyeTransform");
-                gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);
+                gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);        // So the other half will not be overwritten
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
-                
-                //$("#eyeTransform").attr("transform", "#rightEyeTransform");
                 $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
@@ -259,9 +249,8 @@ render.vrRenderTree = function(){
         }
     });
 
-    //Create the VR-rendertree and activate it, using the renderinterface
-    //TODO: (Christian) find XML3D element by tag name instead of id
-    var xml3dElement = document.getElementById("MyXml3d");
+    //Create the VR-rendertree and activate it, using the renderinterface    
+    var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var renderInterface = xml3dElement.getRenderInterface();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
@@ -308,9 +297,6 @@ utility.initiateVR = function() {
         HMD.requestPresent([{
             source: myCanvas
         }]);
-        
-        // Set FOV
-        //setFOV();
 
         // initialize VR render tree
         render.vrRenderTree();
@@ -394,7 +380,6 @@ utility.addResetBtn = function(btnStyle) {
         resetPosition();
     });
 }
-
 
 // Resets the pose of the HMD if it is not null
 function resetPosition() {

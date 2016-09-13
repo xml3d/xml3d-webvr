@@ -114,7 +114,6 @@ render.vrRenderTree = function(){
             // Uniform variables used by the shader 
             var uniformVariables = {};
             //uniformVariables.canvasSize = [this.output.width, this.output.height];
-            //TODO: test
             uniformVariables.canvasSize = [width, height];
             
             // Left and right buffers will be rendered onto these
@@ -122,13 +121,10 @@ render.vrRenderTree = function(){
             uniformVariables.rightTexture = [this.inputs.rightTexture.colorTarget.handle];
             this.shaderProgram.setSystemUniformVariables(Object.keys(uniformVariables), uniformVariables);
 
-            // TODO: old comment/code
-            // Draw the full screen quad using the given shader program
+            // Draw the full screen quad using the shader
             this.fullscreenQuad.draw(this.shaderProgram);
 
-            // TODO: old comment
-            // It's good practice to undo any changes you've made to the GL state after rendering
-            // failure to do so can have unintended side effects in subsequent render passes!
+            // Undo any changes made to the GL state after rendering
             this.shaderProgram.unbind();
             this.output.unbind();
             gl.enable(gl.DEPTH_TEST);
@@ -159,7 +155,6 @@ render.vrRenderTree = function(){
             // Update rotation attribute
             var oriString = orientationAA.axis.x + ' ' + orientationAA.axis.y + ' ' + orientationAA.axis.z + ' ' + orientationAA.angle;
             // Apply rotation transformation to head
-            //TODO: (Christian) cache this jquery element lookup and any others that happen inside the render loop, can be very costly
             $headTransform.attr("rotation", oriString);
 
             // Movement of the head:
@@ -262,9 +257,8 @@ render.vrRenderTree = function(){
         }
     });
 
-    //Create the VR-rendertree and activate it, using the renderinterface
-    //TODO: (Christian) find XML3D element by tag name instead of id
-    var xml3dElement = document.getElementById("MyXml3d");
+    //Create the VR-rendertree and activate it, using the renderinterface    
+    var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var renderInterface = xml3dElement.getRenderInterface();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
