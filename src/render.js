@@ -1,5 +1,7 @@
 var render = module.exports = {};
 
+var fov = require("./fov.js");
+
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 var translationScale = 3.0;
@@ -168,7 +170,8 @@ render.vrRenderTree = function(){
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
             
-
+            fov.setFOV();
+            
             var i = this.prePasses.length;
             if (i == 2) {
                 var rightPass = this.prePasses[0];
