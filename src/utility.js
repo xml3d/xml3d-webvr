@@ -23,14 +23,6 @@ utility.initiateVR = function() {
         myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
 
         gl = myCanvas.getContext('webgl');
-        
-        // TODO: reposition code?
-        // Setting canvas size
-        var leftEye = HMD.getEyeParameters("left");
-        var rightEye = HMD.getEyeParameters("right");
-        gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
-        gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-        console.log("Canvas: " + gl.canvas.height + ", " + gl.canvas.width);
 
         HMD.requestPresent([{
             source: myCanvas
@@ -50,7 +42,6 @@ utility.initiateVR = function() {
 // Helper function to create the VR-related buttons 
 utility.setupButtons = function() {
     
-    // TODO: include button css? (for hover)
     var btnStyle = {
         "width": "10rem",
         "border -width": "0px",

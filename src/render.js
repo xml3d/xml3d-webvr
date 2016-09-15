@@ -16,33 +16,35 @@ render.vrRenderTree = function(){
     var leftOffset = leftEye.offset;
     var rightOffset = rightEye.offset;
     
+    // Create groups around view to apply the eye and head transformations to
+    var $view = $("view");
+    if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
+        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group></group>');
+        $("view").remove();
+        $("#eyeTransform").html($view);
+    }
     // cache jQuery lookups
     var $eyeTransform = $("#eyeTransform");
     var $headTransformGroup = $("#headTransformGroup");
     
     // Prepare the headTransformGroup for use
-    $headTransformGroup.before('<transform id="headTransform"></transform>');
+    if ($("#headTransform").length == 0){
+        $headTransformGroup.before('<transform id="headTransform"></transform>');
+    }
     $headTransformGroup.attr("transform", "#headTransform")
     
     var $headTransform = $("#headTransform");
 
     // Define the translations for the left/right eye
-    $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-    $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
-    $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
+    if ($("#leftEyeTransform").length == 0 && $("#rightEyeTransform").length == 0 && $("#defaultEyeTransform").length == 0){
+        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
+        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+        $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
+    }
 
-    //TODO: (Christian) jquery does some weird stuff in wrap(), try doing this manually (add group to DOM, remove view, add view under group)
-    // Create a group around view to apply the eye transformation to
-    // Dynamically creating this does not work with XML3D??
-    //$("view").wrap('<group id="eyeTransform" transform="#defaultEyeTransform">');
-    //$("#eyeTransform").append($("#Generated_Camera_Transform_0"));
-
-    // TODO: Maybe change to leftEye + rightEye?
     var width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
     var height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-
-    console.log("x: " + width + ", y: " + height);
-
+    console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
 
     // Register the VR shader
     XML3D.materials.register("vr-shader", {
