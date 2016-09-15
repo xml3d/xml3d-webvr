@@ -35,8 +35,6 @@ Christian:
 	-Try stats.js for fps measurements, Chromium dev tools Profiler and Timeline features to find bottlenecks
 
 Known Bugs:
-	-render-distance (zFar) does not update with headposition	
-
 
 Tested With:
 

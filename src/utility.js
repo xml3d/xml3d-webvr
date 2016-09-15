@@ -79,28 +79,24 @@ utility.setupButtons = function() {
     utility.addVRenableBtn(btnStyle);  
 }
 
-var $ResetPos = $("#ResetPos");
 // Add the "Enter VR" button
 utility.addVRenableBtn = function(btnStyle) {
-    var $VREnable = $("#VRenable");
-    var $ButtonBar = $("#ButtonBar");
-    var $ResetPos = $("#ResetPos");
-    
-    $ButtonBar.append("<button id='VRenable'>Enter VR</button>");
-    $VREnable.css(btnStyle);
+    $("#ButtonBar").append("<button id='VRenable'>Enter VR</button>");
+    $("#VRenable").css(btnStyle);
     
     // Adds listener to enable VR
     document.getElementById("VRenable").addEventListener("click", function () {
         if (!(global.inVR)){
             utility.initiateVR();
-            $VREnable.html("Exit VR");
+            $("#VRenable").html("Exit VR");
             utility.addResetBtn(btnStyle);
-            inVR = true;
+            global.inVR = true;
         }else{
-            // TODO: function to exit VR
-            $VREnable.html("Enter VR");
-            $ResetPos.remove();
-            inVR = false;
+            // TODO: reset the render interface
+            HMD.exitPresent();
+            $("#VRenable").html("Enter VR");
+            $("#ResetPos").remove();
+            global.inVR = false;
         }
        
     });
@@ -108,10 +104,8 @@ utility.addVRenableBtn = function(btnStyle) {
 
 // Add the "Reset Position" button
 utility.addResetBtn = function(btnStyle) {
-    var $ButtonBar = $("#ButtonBar");
-    var $ResetPos = $("#ResetPos");
-    $ButtonBar.append("<button id='ResetPos'>Reset Position</button>");
-    $ResetPos.css(btnStyle);
+    $("#ButtonBar").append("<button id='ResetPos'>Reset Position</button>");
+    $("#ResetPos").css(btnStyle);
     
     // Adds listener to reset Position. 
     document.getElementById("ResetPos").addEventListener("click", function () {

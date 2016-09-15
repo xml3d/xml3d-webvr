@@ -181,3 +181,4 @@ render.vrRenderTree = function(){
     //Christian: set XML3D to continuous rendering mode:
     XML3D.options.setValue("renderer-continuous", true);
 };
+

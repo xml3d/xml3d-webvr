@@ -24,5 +24,6 @@ $(document).ready(function () {
 
 // Some global variables
 var HMD, gl, myCanvas;
+global.xml3d_original = XML3D;
 // TODO: maybe use HMD.isPresenting() ?
 global.inVR = false;
