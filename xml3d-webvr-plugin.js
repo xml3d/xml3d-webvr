@@ -1,10 +1,16 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var fov = module.exports = {};
 
+// Creates the <float4x4> for the projection matrix and adapts the <view> for its use
 fov.initializeFOV = function(){
     var $view = $("view");
-    //var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
-    var matrixString = "<float4x4 name='projectionMatrix'></float4x4>";
+    // Placeholder for real projection matrix, to avoid errors by XML3D before rendering the next frame
+    var temp = new Float32Array(16);
+    for (var i = 0; i < 16; i++){
+        temp[i] = 0.0;
+    }
+    
+    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(temp) + "</float4x4>";
     $view.attr("model", "urn:xml3d:view:projective");
     $view.append(matrixString);
 }
@@ -12,18 +18,10 @@ fov.initializeFOV = function(){
 // Sets the FOV in the view element
 fov.setFOV = function($view, $xml3d, $projectionMatrix){
     var fov, zNear, zFar;
-    zNear = 0.01;
-    zFar = 100;
-
-    //TODO: (Christian) This function should take the view element and xml3d element as arguments to avoid DOM lookups
-    // and to make it more generic
 
     // Compute the clipping planes for zNear and zFar
-    //var viewMatrix = document.querySelector("view").getViewMatrix();    //View Matrix
-    //var bb = document.querySelector("xml3d").getWorldBoundingBox(); //BBox for the entire scene
     var viewMatrix = $view.getViewMatrix();    //View Matrix
     var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
-    
     
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
@@ -38,22 +36,17 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
     
+    // Calculate the projection matrix
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
 
-    //TODO: (Christian) replace the text content of the existing float4x4 element ( element.textContent = arrayToString(projectionMatrix) )
-    //var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
-
+    // Update the projection matrix
     $projectionMatrix.textContent = arrayToString(projectionMatrix);
-    //TODO: (Christian) setup code (like changing the view model and creating the float4x4 element) should now be done outside this function
-    //since it's now being called once per frame, huge performance hit if you do this stuff here. Best would be to change the view model and append
-    //the float4x4 during the initial setup in the render tree instead of here.
-    /*
-    var $view = $("view");
-    
-    $view.attr("model", "urn:xml3d:view:projective");
-    $view.append(matrixString);
-    */
+}
 
+fov.resetFOV = function(){
+    var $view = $("view"); 
+    $view.removeAttr("model");
+    document.querySelector("float4x4[name=projectionMatrix]").remove();
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
@@ -103,6 +96,7 @@ var fov = require("./fov.js");
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 var translationScale = 3.0;
+var oldRenderTree;
 
 //******************************************** Custom RenderTree
 
@@ -150,10 +144,10 @@ render.vrRenderTree = function(){
     
     // prepare to apply the FOV transformation
     fov.initializeFOV();
+    // Cache the lookups used for calculating the FOV
     var $view  = document.querySelector("view");
     var $xml3d = document.querySelector("xml3d");
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
-    console.log("pMatrix: " + $projectionMatrix);
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -287,6 +281,7 @@ render.vrRenderTree = function(){
     //Create the VR-rendertree and activate it, using the renderinterface    
     var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var renderInterface = xml3dElement.getRenderInterface();
+    oldRenderTree = renderInterface.getRenderTree();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
 
@@ -294,6 +289,12 @@ render.vrRenderTree = function(){
     XML3D.options.setValue("renderer-continuous", true);
 };
 
+render.resetRenderTree = function(){
+    gl.disable(gl.SCISSOR_TEST);
+    document.getElementsByTagName("xml3d")[0].getRenderInterface().setRenderTree(oldRenderTree); 
+    fov.resetFOV();
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+}
 
 },{"./fov.js":1}],3:[function(require,module,exports){
 (function (global){
@@ -384,6 +385,7 @@ utility.addVRenableBtn = function(btnStyle) {
         }else{
             // TODO: reset the render interface
             HMD.exitPresent();
+            render.resetRenderTree();
             $("#VRenable").html("Enter VR");
             $("#ResetPos").remove();
             global.inVR = false;

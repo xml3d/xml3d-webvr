@@ -45,6 +45,13 @@ render.vrRenderTree = function(){
     var width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
     var height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
+    
+    // prepare to apply the FOV transformation
+    fov.initializeFOV();
+    // Cache the lookups used for calculating the FOV
+    var $view  = document.querySelector("view");
+    var $xml3d = document.querySelector("xml3d");
+    var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
 
     // Register the VR shader
     XML3D.materials.register("vr-shader", {
@@ -167,7 +174,7 @@ render.vrRenderTree = function(){
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
             
-            fov.setFOV();
+            fov.setFOV($view, $xml3d, $projectionMatrix);
             
             var i = this.prePasses.length;
             if (i == 2) {
@@ -262,9 +269,14 @@ render.vrRenderTree = function(){
     //Create the VR-rendertree and activate it, using the renderinterface    
     var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var renderInterface = xml3dElement.getRenderInterface();
+    oldRenderTree = renderInterface.getRenderTree();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
 
     //Christian: set XML3D to continuous rendering mode:
     XML3D.options.setValue("renderer-continuous", true);
 };
+
+render.resetRenderTree = function(){
+    document.getElementsByTagName("xml3d")[0].getRenderInterface().setRenderTree(oldRenderTree);
+}

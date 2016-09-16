@@ -3,7 +3,13 @@ var fov = module.exports = {};
 // Creates the <float4x4> for the projection matrix and adapts the <view> for its use
 fov.initializeFOV = function(){
     var $view = $("view");
-    var matrixString = "<float4x4 name='projectionMatrix'></float4x4>";
+    // Placeholder for real projection matrix, to avoid errors by XML3D before rendering the next frame
+    var temp = new Float32Array(16);
+    for (var i = 0; i < 16; i++){
+        temp[i] = 0.0;
+    }
+    
+    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(temp) + "</float4x4>";
     $view.attr("model", "urn:xml3d:view:projective");
     $view.append(matrixString);
 }
@@ -11,13 +17,10 @@ fov.initializeFOV = function(){
 // Sets the FOV in the view element
 fov.setFOV = function($view, $xml3d, $projectionMatrix){
     var fov, zNear, zFar;
-    zNear = 0.01;
-    zFar = 100;
 
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = $view.getViewMatrix();    //View Matrix
     var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
-    
     
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
@@ -37,6 +40,12 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
 
     // Update the projection matrix
     $projectionMatrix.textContent = arrayToString(projectionMatrix);
+}
+
+fov.resetFOV = function(){
+    var $view = $("view"); 
+    $view.removeAttr("model");
+    document.querySelector("float4x4[name=projectionMatrix]").remove();
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview

@@ -5,6 +5,7 @@ var fov = require("./fov.js");
 // Scales values dat WebVR gives in metres
 var scale = 10.0;
 var translationScale = 3.0;
+var oldRenderTree;
 
 //******************************************** Custom RenderTree
 
@@ -189,6 +190,7 @@ render.vrRenderTree = function(){
     //Create the VR-rendertree and activate it, using the renderinterface    
     var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var renderInterface = xml3dElement.getRenderInterface();
+    oldRenderTree = renderInterface.getRenderTree();
     var vrRenderTree = new vrTree(renderInterface);
     renderInterface.setRenderTree(vrRenderTree);
 
@@ -196,3 +198,9 @@ render.vrRenderTree = function(){
     XML3D.options.setValue("renderer-continuous", true);
 };
 
+render.resetRenderTree = function(){
+    gl.disable(gl.SCISSOR_TEST);
+    document.getElementsByTagName("xml3d")[0].getRenderInterface().setRenderTree(oldRenderTree); 
+    fov.resetFOV();
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+}

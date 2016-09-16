@@ -85,6 +85,7 @@ utility.addVRenableBtn = function(btnStyle) {
         }else{
             // TODO: reset the render interface
             HMD.exitPresent();
+            render.resetRenderTree();
             $("#VRenable").html("Enter VR");
             $("#ResetPos").remove();
             global.inVR = false;
