@@ -49,6 +49,13 @@ render.vrRenderTree = function(){
 
     // Enageble the WebGL Scissortest, needed to properly render to the two different viewports
     gl.enable(gl.SCISSOR_TEST);
+    
+    // prepare to apply the FOV transformation
+    fov.initializeFOV();
+    // Cache the lookups used for calculating the FOV
+    var $view  = document.querySelector("view");
+    var $xml3d = document.querySelector("xml3d");
+    var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -104,7 +111,7 @@ render.vrRenderTree = function(){
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
 
-            fov.setFOV();
+            fov.setFOV($view, $xml3d, $projectionMatrix);
             
             var leftEye = HMD.getEyeParameters("left");
             var rightEye = HMD.getEyeParameters("right");

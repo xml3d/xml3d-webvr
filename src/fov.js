@@ -1,17 +1,23 @@
 var fov = module.exports = {};
 
+// Creates the <float4x4> for the projection matrix and adapts the <view> for its use
+fov.initializeFOV = function(){
+    var $view = $("view");
+    var matrixString = "<float4x4 name='projectionMatrix'></float4x4>";
+    $view.attr("model", "urn:xml3d:view:projective");
+    $view.append(matrixString);
+}
+
 // Sets the FOV in the view element
-fov.setFOV = function(){
+fov.setFOV = function($view, $xml3d, $projectionMatrix){
     var fov, zNear, zFar;
     zNear = 0.01;
     zFar = 100;
 
-    //TODO: (Christian) This function should take the view element and xml3d element as arguments to avoid DOM lookups
-    // and to make it more generic
-
     // Compute the clipping planes for zNear and zFar
-    var viewMatrix = document.querySelector("view").getViewMatrix();    //View Matrix
-    var bb = document.querySelector("xml3d").getWorldBoundingBox(); //BBox for the entire scene
+    var viewMatrix = $view.getViewMatrix();    //View Matrix
+    var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
+    
     
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
@@ -26,20 +32,11 @@ fov.setFOV = function(){
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
     
+    // Calculate the projection matrix
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
 
-    //TODO: (Christian) replace the text content of the existing float4x4 element ( element.textContent = arrayToString(projectionMatrix) )
-    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
-
-    //TODO: (Christian) setup code (like changing the view model and creating the float4x4 element) should now be done outside this function
-    //since it's now being called once per frame, huge performance hit if you do this stuff here. Best would be to change the view model and append
-    //the float4x4 during the initial setup in the render tree instead of here.
-    var $view = $("view");
-    var $fovProjection = $("#fovProjection");
-    
-    $view.attr("model", "urn:xml3d:view:projective");
-    $view.append(matrixString);
-
+    // Update the projection matrix
+    $projectionMatrix.textContent = arrayToString(projectionMatrix);
 }
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview

@@ -1,15 +1,29 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var fov = module.exports = {};
 
+fov.initializeFOV = function(){
+    var $view = $("view");
+    //var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+    var matrixString = "<float4x4 name='projectionMatrix'></float4x4>";
+    $view.attr("model", "urn:xml3d:view:projective");
+    $view.append(matrixString);
+}
+
 // Sets the FOV in the view element
-fov.setFOV = function(){
+fov.setFOV = function($view, $xml3d, $projectionMatrix){
     var fov, zNear, zFar;
     zNear = 0.01;
     zFar = 100;
 
+    //TODO: (Christian) This function should take the view element and xml3d element as arguments to avoid DOM lookups
+    // and to make it more generic
+
     // Compute the clipping planes for zNear and zFar
-    var viewMatrix = document.querySelector("view").getViewMatrix();    //View Matrix
-    var bb = document.querySelector("xml3d").getWorldBoundingBox(); //BBox for the entire scene
+    //var viewMatrix = document.querySelector("view").getViewMatrix();    //View Matrix
+    //var bb = document.querySelector("xml3d").getWorldBoundingBox(); //BBox for the entire scene
+    var viewMatrix = $view.getViewMatrix();    //View Matrix
+    var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
+    
     
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
@@ -25,13 +39,20 @@ fov.setFOV = function(){
     fov = HMD.getEyeParameters("right").fieldOfView;
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
-        
-    var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+
+    //TODO: (Christian) replace the text content of the existing float4x4 element ( element.textContent = arrayToString(projectionMatrix) )
+    //var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+
+    $projectionMatrix.textContent = arrayToString(projectionMatrix);
+    //TODO: (Christian) setup code (like changing the view model and creating the float4x4 element) should now be done outside this function
+    //since it's now being called once per frame, huge performance hit if you do this stuff here. Best would be to change the view model and append
+    //the float4x4 during the initial setup in the render tree instead of here.
+    /*
     var $view = $("view");
-    var $fovProjection = $("#fovProjection");
     
     $view.attr("model", "urn:xml3d:view:projective");
     $view.append(matrixString);
+    */
 
 }
 
@@ -126,6 +147,13 @@ render.vrRenderTree = function(){
 
     // Enageble the WebGL Scissortest, needed to properly render to the two different viewports
     gl.enable(gl.SCISSOR_TEST);
+    
+    // prepare to apply the FOV transformation
+    fov.initializeFOV();
+    var $view  = document.querySelector("view");
+    var $xml3d = document.querySelector("xml3d");
+    var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
+    console.log("pMatrix: " + $projectionMatrix);
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -181,7 +209,7 @@ render.vrRenderTree = function(){
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
 
-            fov.setFOV();
+            fov.setFOV($view, $xml3d, $projectionMatrix);
             
             var leftEye = HMD.getEyeParameters("left");
             var rightEye = HMD.getEyeParameters("right");
@@ -198,7 +226,7 @@ render.vrRenderTree = function(){
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
-                $eyeTransform.attr("transform", "#leftEyeTransform");
+                $eyeTransform.attr("transform", "#rightEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
