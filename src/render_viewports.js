@@ -121,7 +121,7 @@ render.vrRenderTree = function(){
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
-                $eyeTransform.attr("transform", "#leftEyeTransform");
+                $eyeTransform.attr("transform", "#rightEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 XML3D.flushDOMChanges();
