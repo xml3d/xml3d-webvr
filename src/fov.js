@@ -6,6 +6,9 @@ fov.setFOV = function(){
     zNear = 0.01;
     zFar = 100;
 
+    //TODO: (Christian) This function should take the view element and xml3d element as arguments to avoid DOM lookups
+    // and to make it more generic
+
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = document.querySelector("view").getViewMatrix();    //View Matrix
     var bb = document.querySelector("xml3d").getWorldBoundingBox(); //BBox for the entire scene
@@ -24,8 +27,13 @@ fov.setFOV = function(){
     fov = HMD.getEyeParameters("right").fieldOfView;
     
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
-        
+
+    //TODO: (Christian) replace the text content of the existing float4x4 element ( element.textContent = arrayToString(projectionMatrix) )
     var matrixString = "<float4x4 name='projectionMatrix'>" + arrayToString(projectionMatrix) + "</float4x4>";
+
+    //TODO: (Christian) setup code (like changing the view model and creating the float4x4 element) should now be done outside this function
+    //since it's now being called once per frame, huge performance hit if you do this stuff here. Best would be to change the view model and append
+    //the float4x4 during the initial setup in the render tree instead of here.
     var $view = $("view");
     var $fovProjection = $("#fovProjection");
     
