@@ -188,7 +188,7 @@ render.vrRenderTree = function(){
     });
 
     //Create the VR-rendertree and activate it, using the renderinterface    
-    var xml3dElement = document.getElementsByTagName("xml3d")[0]
+    var xml3dElement = document.getElementsByTagName("xml3d")[0];
     var renderInterface = xml3dElement.getRenderInterface();
     oldRenderTree = renderInterface.getRenderTree();
     var vrRenderTree = new vrTree(renderInterface);
@@ -200,7 +200,18 @@ render.vrRenderTree = function(){
 
 render.resetRenderTree = function(){
     gl.disable(gl.SCISSOR_TEST);
-    document.getElementsByTagName("xml3d")[0].getRenderInterface().setRenderTree(oldRenderTree); 
     fov.resetFOV();
+    
+    var xml3dElement = document.getElementsByTagName("xml3d")[0]
+    var bcr = xml3dElement.getBoundingClientRect();
+    
+    
+    console.log(bcr);
+    gl.canvas.width = bcr.width;
+    gl.canvas.height = bcr.height;
+    
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    //gl.viewport(0, 0, bcr.width, bcr.height)
+
+    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree); 
 }
