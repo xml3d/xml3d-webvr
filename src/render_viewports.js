@@ -160,6 +160,8 @@ render.vrRenderTree = function(){
             var context = this.renderInterface.context;
 
             var empty = function () {};
+            global.oldBind = context.canvasTarget.__proto__.bind;
+            console.log(oldBind);
 
             // Make sure the vieport cannot be reset with .bind()
             context.canvasTarget.__proto__.bind = empty;
@@ -204,14 +206,15 @@ render.resetRenderTree = function(){
     
     var xml3dElement = document.getElementsByTagName("xml3d")[0]
     var bcr = xml3dElement.getBoundingClientRect();
+    var renderInterface = xml3dElement.getRenderInterface();
+    var context = renderInterface.context;
+    // Reset .bind() to its previous state
+    context.canvasTarget.__proto__.bind = global.oldBind;
     
-    
-    console.log(bcr);
     gl.canvas.width = bcr.width;
     gl.canvas.height = bcr.height;
     
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    //gl.viewport(0, 0, bcr.width, bcr.height)
 
     xml3dElement.getRenderInterface().setRenderTree(oldRenderTree); 
 }
