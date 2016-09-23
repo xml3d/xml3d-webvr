@@ -64,7 +64,7 @@ utility.setupButtons = function() {
         "transition": "background-color 300ms ease-out"
     };
 
-    $(".xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    $("xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
     
     // Add the VRenable button
     utility.addVRenableBtn(btnStyle);  
