@@ -7,6 +7,7 @@ var orig_requestAnimationFrame = window.requestAnimationFrame;
 
 // Initiates VR, user interaction necessary
 utility.initiateVR = function() {
+    console.log("Entering VR!")
     navigator.getVRDisplays().then(function (devices) {
         
         // Cancel initalisation if no VRDisplays are detected
@@ -21,7 +22,8 @@ utility.initiateVR = function() {
 
         // Get the Canvas
         myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
-
+        console.log(myCanvas);
+        
         gl = myCanvas.getContext('webgl');
 
         HMD.requestPresent([{

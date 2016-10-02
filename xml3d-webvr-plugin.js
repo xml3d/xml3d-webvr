@@ -3,7 +3,7 @@ var fov = module.exports = {};
 
 // Creates the <float4x4> for the projection matrix and adapts the <view> for its use
 fov.initializeFOV = function(){
-    var $view = $("view");
+    var $view = $("#vr_view");
     // Placeholder for real projection matrix, to avoid errors by XML3D before rendering the next frame
     var temp = new Float32Array(16);
     for (var i = 0; i < 16; i++){
@@ -22,16 +22,22 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = $view.getViewMatrix();    //View Matrix
     var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
-    
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
     
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
+    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // zNear should remain above 0.01 to avoid problems with camera
-    zNear = (zNear < 0.01) ? 0.01 : zNear;
-    
+    if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
+        zNear = 0.01;
+    }
+    // Clamp the value to enable further calculations
+    if (zFar == Infinity || zFar == -Infinity){
+        zFar = Number.MAX_VALUE;
+    }    
+    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
@@ -51,40 +57,43 @@ fov.resetFOV = function(){
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
 function fieldOfViewToProjectionMatrix (fov, zNear, zFar) {
-  var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
-  var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
-  var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
-  var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
-    
-  var xScale = 2.0 / (leftTan + rightTan);
-  var yScale = 2.0 / (upTan + downTan);
+    var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
+    var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
+    var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
+    var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
 
-  var out = new Float32Array(16);
-  out[0] = xScale;
-  out[1] = 0.0;
-  out[2] = 0.0;
-  out[3] = 0.0;
-  out[4] = 0.0;
-  out[5] = yScale;
-  out[6] = 0.0;
-  out[7] = 0.0;
-  out[8] = -((leftTan - rightTan) * xScale * 0.5);
-  out[9] = ((upTan - downTan) * yScale * 0.5);
-  out[10] = -(zNear + zFar) / (zFar - zNear);
-  out[11] = -1.0;
-  out[12] = 0.0;
-  out[13] = 0.0;
-  out[14] = -(2.0 * zFar * zNear) / (zFar - zNear);
-  out[15] = 0.0;
+    var xScale = 2.0 / (leftTan + rightTan);
+    var yScale = 2.0 / (upTan + downTan);
 
-  return out;
+    var out = new Float32Array(16);
+    out[0] = xScale;
+    out[1] = 0.0;
+    out[2] = 0.0;
+    out[3] = 0.0;
+    out[4] = 0.0;
+    out[5] = yScale;
+    out[6] = 0.0;
+    out[7] = 0.0;
+    out[8] = -((leftTan - rightTan) * xScale * 0.5);
+    out[9] = ((upTan - downTan) * yScale * 0.5);
+    out[10] = -(zNear + zFar) / (zFar - zNear);
+    out[11] = -1.0;
+    out[12] = 0.0;
+    out[13] = 0.0;
+    //To avoid this value being -Infinity
+    out[14] = -(2.0 * zFar * zNear) / (zFar - zNear);
+    var float_MinValue = -3.40282347e+38;
+    out[14] = (Number.isFinite(out[14])) ? out[14] : float_MinValue;
+    out[15] = 0.0;
+
+    return out;
 }
 
 // Returns array as a String with format: "[1] [2] [3] ..."
 function arrayToString(array){
     var result = "";
     for (var i = 0; i < array.length; i++){
-        result = result + " " + array[i];
+        result = result + " " + array[i].toString();
     }
     return result;
 }
@@ -98,6 +107,7 @@ var fov = require("./fov.js");
 var scale = 10.0;
 var translationScale = 3.0;
 var oldRenderTree;
+var oldView;
 
 //******************************************** Custom RenderTree
 
@@ -111,12 +121,12 @@ render.vrRenderTree = function(){
     
     
     // Create groups around view to apply the eye and head transformations to
-    var $view = $("view");
+    var $view = $("#" + document.getElementsByTagName("xml3d")[0].view.substr(1));
+    
     if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
-        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group></group>');
-        $("view").remove();
-        $("#eyeTransform").html($view);
+        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
     }
+      
     // cache jQuery lookups
     var $eyeTransform = $("#eyeTransform");
     var $headTransformGroup = $("#headTransformGroup");
@@ -136,7 +146,7 @@ render.vrRenderTree = function(){
         $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
     }
     
-    gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+    gl.canvas.width = leftEye.renderWidth + rightEye.renderWidth;
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
 
@@ -145,10 +155,14 @@ render.vrRenderTree = function(){
     
     // prepare to apply the FOV transformation
     fov.initializeFOV();
+    
     // Cache the lookups used for calculating the FOV
-    var $view  = document.querySelector("view");
-    var $xml3d = document.querySelector("xml3d");
+    var $view = getActiveView();
+    var $xml3d = document.getElementsByTagName("xml3d")[0];
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
+    
+    oldView = $xml3d.getAttribute("view");
+    $xml3d.setAttribute("view", "#vr_view");
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -308,9 +322,18 @@ render.resetRenderTree = function(){
     
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree); 
+    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
+    xml3dElement.setAttribute("view", oldView);
+    $("#headTransformGroup").remove();
 }
 
+function getActiveView(){
+    var xml3dElement = document.getElementsByTagName("xml3d")[0]
+    var viewId = xml3dElement.view;
+    if (viewId) {
+        return document.getElementById(viewId.substr(1));
+    }
+}
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./fov.js":1}],3:[function(require,module,exports){
 (function (global){
@@ -323,6 +346,7 @@ var orig_requestAnimationFrame = window.requestAnimationFrame;
 
 // Initiates VR, user interaction necessary
 utility.initiateVR = function() {
+    console.log("Entering VR!")
     navigator.getVRDisplays().then(function (devices) {
         
         // Cancel initalisation if no VRDisplays are detected
@@ -337,7 +361,8 @@ utility.initiateVR = function() {
 
         // Get the Canvas
         myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
-
+        console.log(myCanvas);
+        
         gl = myCanvas.getContext('webgl');
 
         HMD.requestPresent([{
@@ -380,7 +405,7 @@ utility.setupButtons = function() {
         "transition": "background-color 300ms ease-out"
     };
 
-    $(".xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    $("xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
     
     // Add the VRenable button
     utility.addVRenableBtn(btnStyle);  

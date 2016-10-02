@@ -6,6 +6,7 @@ var fov = require("./fov.js");
 var scale = 10.0;
 var translationScale = 3.0;
 var oldRenderTree;
+var oldView;
 
 //******************************************** Custom RenderTree
 
@@ -19,12 +20,12 @@ render.vrRenderTree = function(){
     
     
     // Create groups around view to apply the eye and head transformations to
-    var $view = $("view");
+    var $view = $("#" + document.getElementsByTagName("xml3d")[0].view.substr(1));
+    
     if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
-        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group></group>');
-        $("view").remove();
-        $("#eyeTransform").html($view);
+        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
     }
+      
     // cache jQuery lookups
     var $eyeTransform = $("#eyeTransform");
     var $headTransformGroup = $("#headTransformGroup");
@@ -44,7 +45,7 @@ render.vrRenderTree = function(){
         $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
     }
     
-    gl.canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+    gl.canvas.width = leftEye.renderWidth + rightEye.renderWidth;
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
 
@@ -53,10 +54,14 @@ render.vrRenderTree = function(){
     
     // prepare to apply the FOV transformation
     fov.initializeFOV();
+    
     // Cache the lookups used for calculating the FOV
-    var $view  = document.querySelector("view");
-    var $xml3d = document.querySelector("xml3d");
+    var $view = getActiveView();
+    var $xml3d = document.getElementsByTagName("xml3d")[0];
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
+    
+    oldView = $xml3d.getAttribute("view");
+    $xml3d.setAttribute("view", "#vr_view");
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
@@ -216,5 +221,15 @@ render.resetRenderTree = function(){
     
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree); 
+    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
+    xml3dElement.setAttribute("view", oldView);
+    $("#headTransformGroup").remove();
+}
+
+function getActiveView(){
+    var xml3dElement = document.getElementsByTagName("xml3d")[0]
+    var viewId = xml3dElement.view;
+    if (viewId) {
+        return document.getElementById(viewId.substr(1));
+    }
 }

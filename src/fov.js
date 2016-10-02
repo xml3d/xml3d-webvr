@@ -2,7 +2,7 @@ var fov = module.exports = {};
 
 // Creates the <float4x4> for the projection matrix and adapts the <view> for its use
 fov.initializeFOV = function(){
-    var $view = $("view");
+    var $view = $("#vr_view");
     // Placeholder for real projection matrix, to avoid errors by XML3D before rendering the next frame
     var temp = new Float32Array(16);
     for (var i = 0; i < 16; i++){
@@ -21,16 +21,22 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = $view.getViewMatrix();    //View Matrix
     var bb = $xml3d.getWorldBoundingBox(); //BBox for the entire scene
-    
     // Transform BBox to view space
     bb.transformAxisAligned(viewMatrix);
     
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
+    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // zNear should remain above 0.01 to avoid problems with camera
-    zNear = (zNear < 0.01) ? 0.01 : zNear;
-    
+    if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
+        zNear = 0.01;
+    }
+    // Clamp the value to enable further calculations
+    if (zFar == Infinity || zFar == -Infinity){
+        zFar = Number.MAX_VALUE;
+    }    
+    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
@@ -50,40 +56,43 @@ fov.resetFOV = function(){
 
 // Returns FOV Projection Matrix, as given by: https://w3c.github.io/webvr/#interface-interface-vrfieldofview
 function fieldOfViewToProjectionMatrix (fov, zNear, zFar) {
-  var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
-  var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
-  var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
-  var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
-    
-  var xScale = 2.0 / (leftTan + rightTan);
-  var yScale = 2.0 / (upTan + downTan);
+    var upTan = Math.tan(fov.upDegrees * Math.PI / 180.0);
+    var downTan = Math.tan(fov.downDegrees * Math.PI / 180.0);
+    var leftTan = Math.tan(fov.leftDegrees * Math.PI / 180.0);
+    var rightTan = Math.tan(fov.rightDegrees * Math.PI / 180.0);
 
-  var out = new Float32Array(16);
-  out[0] = xScale;
-  out[1] = 0.0;
-  out[2] = 0.0;
-  out[3] = 0.0;
-  out[4] = 0.0;
-  out[5] = yScale;
-  out[6] = 0.0;
-  out[7] = 0.0;
-  out[8] = -((leftTan - rightTan) * xScale * 0.5);
-  out[9] = ((upTan - downTan) * yScale * 0.5);
-  out[10] = -(zNear + zFar) / (zFar - zNear);
-  out[11] = -1.0;
-  out[12] = 0.0;
-  out[13] = 0.0;
-  out[14] = -(2.0 * zFar * zNear) / (zFar - zNear);
-  out[15] = 0.0;
+    var xScale = 2.0 / (leftTan + rightTan);
+    var yScale = 2.0 / (upTan + downTan);
 
-  return out;
+    var out = new Float32Array(16);
+    out[0] = xScale;
+    out[1] = 0.0;
+    out[2] = 0.0;
+    out[3] = 0.0;
+    out[4] = 0.0;
+    out[5] = yScale;
+    out[6] = 0.0;
+    out[7] = 0.0;
+    out[8] = -((leftTan - rightTan) * xScale * 0.5);
+    out[9] = ((upTan - downTan) * yScale * 0.5);
+    out[10] = -(zNear + zFar) / (zFar - zNear);
+    out[11] = -1.0;
+    out[12] = 0.0;
+    out[13] = 0.0;
+    //To avoid this value being -Infinity
+    out[14] = -(2.0 * zFar * zNear) / (zFar - zNear);
+    var float_MinValue = -3.40282347e+38;
+    out[14] = (Number.isFinite(out[14])) ? out[14] : float_MinValue;
+    out[15] = 0.0;
+
+    return out;
 }
 
 // Returns array as a String with format: "[1] [2] [3] ..."
 function arrayToString(array){
     var result = "";
     for (var i = 0; i < array.length; i++){
-        result = result + " " + array[i];
+        result = result + " " + array[i].toString();
     }
     return result;
 }
