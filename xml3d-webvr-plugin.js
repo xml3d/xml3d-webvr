@@ -28,7 +28,6 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
-    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // zNear should remain above 0.01 to avoid problems with camera
     if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
         zNear = 0.01;
@@ -37,7 +36,6 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     if (zFar == Infinity || zFar == -Infinity){
         zFar = Number.MAX_VALUE;
     }    
-    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;
@@ -157,12 +155,13 @@ render.vrRenderTree = function(){
     fov.initializeFOV();
     
     // Cache the lookups used for calculating the FOV
-    var $view = getActiveView();
     var $xml3d = document.getElementsByTagName("xml3d")[0];
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
     
     oldView = $xml3d.getAttribute("view");
     $xml3d.setAttribute("view", "#vr_view");
+    
+    var $view = getActiveView();
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {

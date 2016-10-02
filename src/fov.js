@@ -27,7 +27,6 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
-    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // zNear should remain above 0.01 to avoid problems with camera
     if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
         zNear = 0.01;
@@ -36,7 +35,6 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     if (zFar == Infinity || zFar == -Infinity){
         zFar = Number.MAX_VALUE;
     }    
-    console.log("zNear: " + zNear + ", zFar: " + zFar)
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
     fov = HMD.getEyeParameters("right").fieldOfView;

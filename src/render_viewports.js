@@ -56,12 +56,13 @@ render.vrRenderTree = function(){
     fov.initializeFOV();
     
     // Cache the lookups used for calculating the FOV
-    var $view = getActiveView();
     var $xml3d = document.getElementsByTagName("xml3d")[0];
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
     
     oldView = $xml3d.getAttribute("view");
     $xml3d.setAttribute("view", "#vr_view");
+    
+    var $view = getActiveView();
 
     // Define the VR RenderPass
     var VRPass = function (renderInterface, output, opt) {
