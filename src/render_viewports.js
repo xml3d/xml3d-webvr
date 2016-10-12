@@ -23,7 +23,13 @@ render.vrRenderTree = function(){
     var $view = $("#" + document.getElementsByTagName("xml3d")[0].view.substr(1));
     
     if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
-        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
+        if ($view.attr("transform")) {
+            //old view has a transform, we need to move it to above the head transform in the hierarchy to preserve current camera position and orientation
+            $view.before('<group id="oldCameraTransform"><group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group></group>');
+            $("#oldCameraTransform").attr("transform", $view.attr("transform"));
+        } else {
+            $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
+        }
     }
       
     // cache jQuery lookups
@@ -37,7 +43,7 @@ render.vrRenderTree = function(){
     $headTransformGroup.attr("transform", "#headTransform")
     
     var $headTransform = $("#headTransform");
-
+    
     // Define the translations for the left/right eye
     if ($("#leftEyeTransform").length == 0 && $("#rightEyeTransform").length == 0 && $("#defaultEyeTransform").length == 0){
         $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
@@ -225,6 +231,7 @@ render.resetRenderTree = function(){
     xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
     xml3dElement.setAttribute("view", oldView);
     $("#headTransformGroup").remove();
+    $("#oldCameraTransform").remove();
 }
 
 function getActiveView(){
