@@ -8,37 +8,29 @@ var orig_requestAnimationFrame = window.requestAnimationFrame;
 // Initiates VR, user interaction necessary
 utility.initiateVR = function() {
     console.log("Entering VR!")
-    navigator.getVRDisplays().then(function (devices) {
-        
-        // Cancel initalisation if no VRDisplays are detected
-        if (devices.length < 1){
-            console.log("No VRDisplays found, reload page to try again")
-            return;
-        }
-        
-        // Default: Use first registered device
-        HMD = devices[0];
-        console.log(HMD);
+       
+	// Default: Use first registered device
+	HMD = global.devices[0];
+	console.log(HMD);
 
-        // Get the Canvas
-        myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
-        console.log(myCanvas);
-        
-        gl = myCanvas.getContext('webgl');
+	// Get the Canvas
+	myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
+	console.log(myCanvas);
+	
+	gl = myCanvas.getContext('webgl');
 
-        HMD.requestPresent([{
-            source: myCanvas
-        }]);
+	HMD.requestPresent([{
+		source: myCanvas
+	}]);
 
-        // initialize VR render tree
-        render.vrRenderTree();
+	// initialize VR render tree
+	render.vrRenderTree();
 
-        // Replace the original window.requestAnimationFrame() with the one for the HMD
-        // .requestAnimationFrame() will be called by XML3D
-        window.requestAnimationFrame = function(callback){
-            HMD.requestAnimationFrame(callback);
-        };
-    });
+	// Replace the original window.requestAnimationFrame() with the one for the HMD
+	// .requestAnimationFrame() will be called by XML3D
+	window.requestAnimationFrame = function(callback){
+		HMD.requestAnimationFrame(callback);
+	};
 };
 
 // Helper function to create the VR-related buttons 
@@ -66,7 +58,7 @@ utility.setupButtons = function() {
         "transition": "background-color 300ms ease-out"
     };
 
-    $("xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    $("body").append("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
     
     // Add the VRenable button
     utility.addVRenableBtn(btnStyle);  
