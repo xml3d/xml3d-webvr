@@ -27,13 +27,13 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
-    // zNear should remain above 0.01 to avoid problems with camera
-    if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
-        zNear = 0.01;
+    // zNear should remain above 1 to avoid problems with camera
+    if (zNear < 1.0 || zNear == Infinity || zNear == -Infinity){
+        zNear = 1.0;
     }
     // Clamp the value to enable further calculations
     if (zFar == Infinity || zFar == -Infinity){
-        zFar = Number.MAX_VALUE;
+        zFar = 1000;
     }    
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
