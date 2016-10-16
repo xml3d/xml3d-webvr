@@ -28,13 +28,13 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     zNear = -bb.max.z;
     zFar = -bb.min.z;
 
-    // zNear should remain above 0.01 to avoid problems with camera
-    if (zNear < 0.01 || zNear == Infinity || zNear == -Infinity){
-        zNear = 0.01;
+    // zNear should remain above 1 to avoid problems with camera
+    if (zNear < 1.0 || zNear == Infinity || zNear == -Infinity){
+        zNear = 1.0;
     }
     // Clamp the value to enable further calculations
     if (zFar == Infinity || zFar == -Infinity){
-        zFar = Number.MAX_VALUE;
+        zFar = 1000;
     }    
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
@@ -102,8 +102,9 @@ var render = module.exports = {};
 var fov = require("./fov.js");
 
 // Scales values dat WebVR gives in metres
-var scale = 10.0;
-var translationScale = 3.0;
+window.XML3D.webvr = {};
+window.XML3D.webvr.translationScale = 3.0;
+window.XML3D.webvr.scale = 10.0;
 var oldRenderTree;
 var oldView;
 
@@ -122,7 +123,13 @@ render.vrRenderTree = function(){
     var $view = $("#" + document.getElementsByTagName("xml3d")[0].view.substr(1));
     
     if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
-        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
+        if ($view.attr("transform")) {
+            //old view has a transform, we need to move it to above the head transform in the hierarchy to preserve current camera position and orientation
+            $view.before('<group id="oldCameraTransform"><group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group></group>');
+            $("#oldCameraTransform").attr("transform", $view.attr("transform"));
+        } else {
+            $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
+        }
     }
       
     // cache jQuery lookups
@@ -136,11 +143,11 @@ render.vrRenderTree = function(){
     $headTransformGroup.attr("transform", "#headTransform")
     
     var $headTransform = $("#headTransform");
-
+    
     // Define the translations for the left/right eye
     if ($("#leftEyeTransform").length == 0 && $("#rightEyeTransform").length == 0 && $("#defaultEyeTransform").length == 0){
-        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * window.XML3D.webvr.scale + ' ' + leftOffset[1] * window.XML3D.webvr.scale + ' ' + leftOffset[2] * window.XML3D.webvr.scale + '"></transform>');
+        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * window.XML3D.webvr.scale + ' ' + rightOffset[1] * window.XML3D.webvr.scale + ' ' + rightOffset[2] * window.XML3D.webvr.scale + '"></transform>');
         $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
     }
     
@@ -213,7 +220,7 @@ render.vrRenderTree = function(){
             // Get position as 3D vector
             var position = pose.position ? pose.position : [0, 0, 0];
             // Convert to string
-            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
+            var posiString = position[0] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale + ' ' + position[1] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale + ' ' + position[2] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale;
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
 
@@ -324,6 +331,7 @@ render.resetRenderTree = function(){
     xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
     xml3dElement.setAttribute("view", oldView);
     $("#headTransformGroup").remove();
+    $("#oldCameraTransform").remove();
 }
 
 function getActiveView(){
@@ -346,37 +354,29 @@ var orig_requestAnimationFrame = window.requestAnimationFrame;
 // Initiates VR, user interaction necessary
 utility.initiateVR = function() {
     console.log("Entering VR!")
-    navigator.getVRDisplays().then(function (devices) {
-        
-        // Cancel initalisation if no VRDisplays are detected
-        if (devices.length < 1){
-            console.log("No VRDisplays found, reload page to try again")
-            return;
-        }
-        
-        // Default: Use first registered device
-        HMD = devices[0];
-        console.log(HMD);
+       
+	// Default: Use first registered device
+	HMD = global.devices[0];
+	console.log(HMD);
 
-        // Get the Canvas
-        myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
-        console.log(myCanvas);
-        
-        gl = myCanvas.getContext('webgl');
+	// Get the Canvas
+	myCanvas = document.getElementsByClassName("_xml3d")[0]; //TODO: review this
+	console.log(myCanvas);
+	
+	gl = myCanvas.getContext('webgl');
 
-        HMD.requestPresent([{
-            source: myCanvas
-        }]);
+	HMD.requestPresent([{
+		source: myCanvas
+	}]);
 
-        // initialize VR render tree
-        render.vrRenderTree();
+	// initialize VR render tree
+	render.vrRenderTree();
 
-        // Replace the original window.requestAnimationFrame() with the one for the HMD
-        // .requestAnimationFrame() will be called by XML3D
-        window.requestAnimationFrame = function(callback){
-            HMD.requestAnimationFrame(callback);
-        };
-    });
+	// Replace the original window.requestAnimationFrame() with the one for the HMD
+	// .requestAnimationFrame() will be called by XML3D
+	window.requestAnimationFrame = function(callback){
+		HMD.requestAnimationFrame(callback);
+	};
 };
 
 // Helper function to create the VR-related buttons 
@@ -404,7 +404,7 @@ utility.setupButtons = function() {
         "transition": "background-color 300ms ease-out"
     };
 
-    $("xml3d").first().before("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
+    $("body").append("<div id='ButtonBar' style='position: fixed; bottom: 0px'></div>");
     
     // Add the VRenable button
     utility.addVRenableBtn(btnStyle);  
@@ -467,7 +467,15 @@ var util = require("./utility.js");
 
 $(document).ready(function () {  
    // Dynamically create VR-related buttons
-    util.setupButtons();  
+    navigator.getVRDisplays().then(function (devices) {
+		// Cancel initalisation if no VRDisplays are detected
+		if (devices.length < 1){
+			console.log("No VRDisplays found, reload page to try again");
+			return;
+		}
+		global.devices = devices;
+		util.setupButtons();  
+	});
 });
 
 // Some global variables

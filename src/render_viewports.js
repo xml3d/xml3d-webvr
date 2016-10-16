@@ -3,8 +3,9 @@ var render = module.exports = {};
 var fov = require("./fov.js");
 
 // Scales values dat WebVR gives in metres
-var scale = 10.0;
-var translationScale = 3.0;
+window.XML3D.webvr = {};
+window.XML3D.webvr.translationScale = 3.0;
+window.XML3D.webvr.scale = 10.0;
 var oldRenderTree;
 var oldView;
 
@@ -46,8 +47,8 @@ render.vrRenderTree = function(){
     
     // Define the translations for the left/right eye
     if ($("#leftEyeTransform").length == 0 && $("#rightEyeTransform").length == 0 && $("#defaultEyeTransform").length == 0){
-        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * window.XML3D.webvr.scale + ' ' + leftOffset[1] * window.XML3D.webvr.scale + ' ' + leftOffset[2] * window.XML3D.webvr.scale + '"></transform>');
+        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * window.XML3D.webvr.scale + ' ' + rightOffset[1] * window.XML3D.webvr.scale + ' ' + rightOffset[2] * window.XML3D.webvr.scale + '"></transform>');
         $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
     }
     
@@ -120,7 +121,7 @@ render.vrRenderTree = function(){
             // Get position as 3D vector
             var position = pose.position ? pose.position : [0, 0, 0];
             // Convert to string
-            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
+            var posiString = position[0] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale + ' ' + position[1] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale + ' ' + position[2] * window.XML3D.webvr.scale * window.XML3D.webvr.translationScale;
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
 
