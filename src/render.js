@@ -3,8 +3,11 @@ var render = module.exports = {};
 var fov = require("./fov.js");
 
 // Scales values dat WebVR gives in metres
-var scale = 10.0;
-var translationScale = 3.0;
+window.XML3D.webvr = {};
+window.XML3D.webvr.translationScale = 3.0;
+var eyeScale = 10.0;
+var oldRenderTree;
+var oldView;
 
 //******************************************** Custom RenderTree
 
@@ -20,7 +23,13 @@ render.vrRenderTree = function(){
     var $view = $("#" + document.getElementsByTagName("xml3d")[0].view.substr(1));
     
     if ($("#headTransformGroup").length == 0 && $("#eyeTransform").length == 0 ){
-        $view.before('<group id="headTransformGroup"><group id="eyeTransform"></group><view id="vr_view"></view></group>');
+        if ($view.attr("transform")) {
+            //old view has a transform, we need to move it to above the head transform in the hierarchy to preserve current camera position and orientation
+            $view.before('<group id="oldCameraTransform"><group id="headTransformGroup"><group id="eyeTransform"><view id="vr_view"></view></group></group></group>');
+            $("#oldCameraTransform").attr("transform", $view.attr("transform"));
+        } else {
+            $view.before('<group id="headTransformGroup"><group id="eyeTransform"><view id="vr_view"></view></group></group>');
+        }
     }
     
     // cache jQuery lookups
@@ -37,22 +46,30 @@ render.vrRenderTree = function(){
 
     // Define the translations for the left/right eye
     if ($("#leftEyeTransform").length == 0 && $("#rightEyeTransform").length == 0 && $("#defaultEyeTransform").length == 0){
-        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * scale + ' ' + leftOffset[1] * scale + ' ' + leftOffset[2] * scale + '"></transform>');
-        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * scale + ' ' + rightOffset[1] * scale + ' ' + rightOffset[2] * scale + '"></transform>');
+        $eyeTransform.before('<transform id="leftEyeTransform" translation="' + leftOffset[0] * eyeScale + ' ' + leftOffset[1] * eyeScale + ' ' + leftOffset[2] * eyeScale + '"></transform>');
+        $eyeTransform.before('<transform id="rightEyeTransform" translation="' + rightOffset[0] * eyeScale + ' ' + rightOffset[1] * eyeScale + ' ' + rightOffset[2] * eyeScale + '"></transform>');
         $eyeTransform.before('<transform id="defaultEyeTransform" translation="0 0 0"></transform>');
     }
 
     gl.canvas.width = leftEye.renderWidth + rightEye.renderWidth;
-    var height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+    gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
     
     // prepare to apply the FOV transformation
     fov.initializeFOV();
+    
     // Cache the lookups used for calculating the FOV
-    var $view = getActiveView();
     var $xml3d = document.getElementsByTagName("xml3d")[0];
     var $projectionMatrix = document.querySelector("float4x4[name=projectionMatrix]");
 
+    oldView = $xml3d.getAttribute("view");
+    $xml3d.setAttribute("view", "#vr_view");
+    
+    var $view = getActiveView();
+    
+    var oldPosition = [0.0, 0.0, 0.0];
+    var oldOrientation = [0.0, 0.0, 0.0, 1.0];
+    
     // Register the VR shader
     XML3D.materials.register("vr-shader", {
         vertex: [
@@ -159,6 +176,12 @@ render.vrRenderTree = function(){
             // Rotation of the head:
             // Get the orientation (given as quaternion)
             var orientationQ = pose.orientation ? pose.orientation : [0, 0, 0, 1];
+            orientationQ[0] = orientationQ[0] ? orientationQ[0] : oldOrientation[0];
+            orientationQ[1] = orientationQ[1] ? orientationQ[1] : oldOrientation[1];
+            orientationQ[2] = orientationQ[2] ? orientationQ[2] : oldOrientation[2];
+            orientationQ[3] = orientationQ[3] ? orientationQ[3] : oldOrientation[3];
+            oldOrientation = orientationQ;
+            
             // Transform into axis + angle
             var orientationAA = new XML3D.AxisAngle.fromQuat(new XML3D.Quat(orientationQ[0], orientationQ[1], orientationQ[2], orientationQ[3]));
             // Update rotation attribute
@@ -168,9 +191,15 @@ render.vrRenderTree = function(){
 
             // Movement of the head:
             // Get position as 3D vector
+            // Make sure the position is never null
             var position = pose.position ? pose.position : [0, 0, 0];
+            position[0] = position[0] ? position[0] : oldPosition[0];
+            position[1] = position[1] ? position[1] : oldPosition[1];
+            position[2] = position[2] ? position[2] : oldPosition[2];
+            oldPosition = position;
+
             // Convert to string
-            var posiString = position[0] * scale * translationScale + ' ' + position[1] * scale * translationScale + ' ' + position[2] * scale * translationScale;
+            var posiString = position[0]* window.XML3D.webvr.translationScale + ' ' + position[1] * window.XML3D.webvr.translationScale + ' ' + position[2] * window.XML3D.webvr.translationScale;           
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
             
@@ -278,13 +307,14 @@ render.vrRenderTree = function(){
 };
 
 render.resetRenderTree = function(){
+    fov.resetFOV();
+    
     var xml3dElement = document.getElementsByTagName("xml3d")[0]
-    
-    xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
-    
+        
     xml3dElement.getRenderInterface().setRenderTree(oldRenderTree);
     xml3dElement.setAttribute("view", oldView);
     $("#headTransformGroup").remove();
+    $("#oldCameraTransform").remove();
 }
 
 function getActiveView(){
