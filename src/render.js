@@ -13,6 +13,17 @@ var oldView;
 
 render.vrRenderTree = function(){
     console.log("creating custom render tree");
+    
+    //initialising stats
+    try{
+        var stats = new Stats();
+        stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild( stats.dom );
+    } catch(error){ // Dummy stats in case the script is not included
+        var stats = {}
+        stats.begin = function(){};
+        stats.end = function(){};
+    }
 
     var leftEye = HMD.getEyeParameters("left");
     var rightEye = HMD.getEyeParameters("right");
@@ -54,6 +65,9 @@ render.vrRenderTree = function(){
     gl.canvas.width = leftEye.renderWidth + rightEye.renderWidth;
     gl.canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
     console.log("Canvas: " + gl.canvas.width + ", " + gl.canvas.height);
+    
+    var width = gl.canvas.width;
+    var height =  gl.canvas.height;  
     
     // prepare to apply the FOV transformation
     fov.initializeFOV();
@@ -139,7 +153,7 @@ render.vrRenderTree = function(){
 
             // Uniform variables used by the shader 
             var uniformVariables = {};
-            //uniformVariables.canvasSize = [this.output.width, this.output.height];
+
             uniformVariables.canvasSize = [width, height];
             
             // Left and right buffers will be rendered onto these
@@ -167,7 +181,8 @@ render.vrRenderTree = function(){
             if (this.processed)
                 return;
             this.processed = true;
-
+            stats.begin();
+            
             // Stereo view
 
             // Get pose as late as possible to minimize latency!
@@ -226,6 +241,7 @@ render.vrRenderTree = function(){
             }
             this.render(scene);
             
+            stats.end();
             HMD.submitFrame(pose);
         },
     });
