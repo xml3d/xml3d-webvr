@@ -227,12 +227,10 @@ render.vrRenderTree = function(){
 
                 $eyeTransform.attr("transform", "#leftEyeTransform");
                 XML3D.flushDOMChanges();
-                leftPass.renderTree(scene);
-                //leftPass.render(scene);
+                leftPass.render(scene);
                 $eyeTransform.attr("transform", "#rightEyeTransform");
                 XML3D.flushDOMChanges();
-                rightPass.renderTree(scene);
-                //rightPass.render(scene);
+                rightPass.render(scene);
 
             } else {
                 // If something unexpected happens
