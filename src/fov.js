@@ -35,9 +35,6 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix, fov){
     if (zFar == Infinity || zFar == -Infinity){
         zFar = 1000;
     }    
-    // Assumes left and right FOV are equal
-    // TODO: Not necessarily equal, possibly set FOV per left/right view?
-    //fov = HMD.getEyeParameters("right").fieldOfView;
     
     // Calculate the projection matrix
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
