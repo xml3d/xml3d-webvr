@@ -15,8 +15,8 @@ fov.initializeFOV = function(){
 }
 
 // Sets the FOV in the view element
-fov.setFOV = function($view, $xml3d, $projectionMatrix){
-    var fov, zNear, zFar;
+fov.setFOV = function($view, $xml3d, $projectionMatrix, fov){
+    var zNear, zFar;
 
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = $view.getViewMatrix();    //View Matrix
@@ -37,7 +37,7 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     }    
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
-    fov = HMD.getEyeParameters("right").fieldOfView;
+    //fov = HMD.getEyeParameters("right").fieldOfView;
     
     // Calculate the projection matrix
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);

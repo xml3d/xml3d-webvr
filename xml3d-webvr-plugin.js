@@ -16,8 +16,8 @@ fov.initializeFOV = function(){
 }
 
 // Sets the FOV in the view element
-fov.setFOV = function($view, $xml3d, $projectionMatrix){
-    var fov, zNear, zFar;
+fov.setFOV = function($view, $xml3d, $projectionMatrix, fov){
+    var zNear, zFar;
 
     // Compute the clipping planes for zNear and zFar
     var viewMatrix = $view.getViewMatrix();    //View Matrix
@@ -38,7 +38,7 @@ fov.setFOV = function($view, $xml3d, $projectionMatrix){
     }    
     // Assumes left and right FOV are equal
     // TODO: Not necessarily equal, possibly set FOV per left/right view?
-    fov = HMD.getEyeParameters("right").fieldOfView;
+    //fov = HMD.getEyeParameters("right").fieldOfView;
     
     // Calculate the projection matrix
     var projectionMatrix = fieldOfViewToProjectionMatrix(fov, zNear, zFar);
@@ -103,7 +103,7 @@ var fov = require("./fov.js");
 
 // Scales values dat WebVR gives in metres
 window.XML3D.webvr = {};
-window.XML3D.webvr.translationScale = 3.0;
+window.XML3D.webvr.translationScale = 50.0;
 var eyeScale = 10.0;
 var oldRenderTree;
 var oldView;
@@ -252,7 +252,7 @@ render.vrRenderTree = function(){
             // Apply position transformation to head
             $headTransform.attr("translation", posiString);
 
-            fov.setFOV($view, $xml3d, $projectionMatrix);
+            
             
             var leftEye = HMD.getEyeParameters("left");
             var rightEye = HMD.getEyeParameters("right");
@@ -261,14 +261,19 @@ render.vrRenderTree = function(){
             if (i == 2) {
                 var rightPass = this.prePasses[0];
                 var leftPass = this.prePasses[1];
-
+                
+                
                 // Only render to one half of the canvas
+                var fov_ = HMD.getEyeParameters("left").fieldOfView;
+                fov.setFOV($view, $xml3d, $projectionMatrix, fov_);
                 $eyeTransform.attr("transform", "#leftEyeTransform");
                 gl.scissor(0, 0, leftEye.renderWidth, leftEye.renderHeight);        // So the other half will not be overwritten
                 gl.viewport(0, 0, leftEye.renderWidth, leftEye.renderHeight);
                 XML3D.flushDOMChanges();
                 leftPass.render(scene);
                 
+                fov_ = HMD.getEyeParameters("right").fieldOfView;
+                fov.setFOV($view, $xml3d, $projectionMatrix, fov_);
                 $eyeTransform.attr("transform", "#rightEyeTransform");
                 gl.scissor(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);
                 gl.viewport(leftEye.renderWidth, 0, rightEye.renderWidth, rightEye.renderHeight);

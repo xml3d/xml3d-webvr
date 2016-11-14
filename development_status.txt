@@ -9,30 +9,18 @@ Implemented:
 	-FOV integration
 	-Synchronize XML3D Rendering with "Snapshots" taken by HMD
 	-Dynamically create buttons
+	-Buttons for leaving VR
+	-Latency testers (only with stats.js)
+	-FPS counters (only with stats.js)
 
 
 
 Not yet implemented:
-
-	-Latency testers (min, max, average):
-		* XML3D finished rendering -> submitFrame
-		* getPose -> XML3D uses pose
-		(current time deltas...)
-	-FPS counters (min, max, average, current)
-		* XML3D
-		* HMD
 	-Controller Support
 		* XBOX One Controller
 		* Vive Controller?
 	-User movement with collision detection
-	-Buttons for leaving VR
 	
-
-Christian:
-	-Add the plugin to xml3d-examples (https://github.com/xml3d/xml3d-examples) and test with the scenes there
-	-Test with a large scene (ie. kingsx from xml3d-demos).
-	-Try stats.js for fps measurements, Chromium dev tools Profiler and Timeline features to find bottlenecks
-
 Known Bugs:
 
 Tested With:
